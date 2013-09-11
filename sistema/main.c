@@ -9,13 +9,13 @@ int main() {
 	char *inp = (char*)calloc(16, sizeof(char));
 	check_alloc(inp);
 
-	scanf("%d %d\n", &b1, &b2);
-	inp = fgets(inp, 15, stdin);
-	inp[strlen(inp) - 1] = 0; // убирает ненужный пробел в конце строки
+	scanf("%d %d\n%s", &b1, &b2, inp);
+
 	char *res = translate(b1, b2, inp);
 	printf("%s\n", res);
 
 	free(res);
 	free(inp);
+
 	return 0;
 }

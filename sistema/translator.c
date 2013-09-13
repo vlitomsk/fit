@@ -5,99 +5,74 @@
 #include "translator.h"
 #include "common.h"
 
-void inpbye() {
-	printf("bad input\n");
-	exit(1);
-}
+int validate_input(int b1, int b2, char *inp) {
+	if (!bounds(b1, 2, 16) || !bounds(b2, 2, 16)) 
+		return 0;
 
-int* parse_number(char *inp, int from, int to) {
-	int i, *parsed = (int*)malloc(sizeof(int) * (to - from));
-	check_alloc(parsed);
+	if (strchr(inp, '.') != strrchr(inp, '.')) 
+		return 0;
 
-	for (i = from; i < to; ++i) 
-		parsed[i - from] = digit_to_num_equiv(inp[i]);
-
-	return parsed;
-}
-
-#define NOTFOUND -1
-// works
-int** parse_input(int b1, int b2, char *inp, int *len1, int *len2) {
-	if (!bounds(b1, 2, 16) || !bounds(b2, 2, 16))  
-		inpbye();
-
-	int i, pointpos = strlen(inp);
-	char points = 0;
+	int i;
 	for (i = 0; i < strlen(inp); ++i) {
 		int equiv = digit_to_num_equiv(inp[i]);
-		if (equiv == POINT) {
-			++points;
-			pointpos = i;
-		} else if (equiv == ERROR || !bounds(equiv, 0, b1 - 1))
-			inpbye();
+		if (equiv == POINT)
+			continue;
+		else if (equiv == ERROR || !bounds(equiv, 0, b1 - 1)) 
+			return 0;
 	}
 
-	if (points > 1)
-		inpbye();
-
-	int** parsed = (int**)malloc(sizeof(int*) * 2);
-	check_alloc(parsed);
-	parsed[0] = parse_number(inp, 0, pointpos);
-	parsed[1] = (points ? parse_number(inp, pointpos + 1, strlen(inp)) : NULL);
-
-	*len1 = pointpos;
-	*len2 = (points ? strlen(inp) - pointpos - 1 : strlen(inp) - pointpos);
-
-	return parsed;
+	return 1;
 }
 
-/*
-  основания b1 -> 10 -> b2 
-  выделяет память под ответ
-*/
-char* int_translate(int b1, int b2, int *s, int slen) {
-	u64 sum = 0;
-	int i;
-	for (i = slen - 1; i >= 0; --i)
-		sum += (u64)s[i] * (u64)pow(b1, slen - 1 - i);
-	char *output = (char*)calloc(12*4 + 1, sizeof(char));
-	check_alloc(output);
-
-	int ost;
-	i = 0;
-	while (sum) {
-		ost = sum % (u64)b2;
+void translate_int_part(int base, u64 n, char *output) {
+	int ost, i = 0;
+	while (n) {
+		ost = n % (u64)base;
 		output[i++] = num_to_digit_equiv(ost);
-		sum /= (u64)b2;
+		n /= (u64)base;
 	}
+	output[i] = 0;
 
-	reverse_string(output);
-	return output;
+	reverse_string(output);	
 }
 
-char* translate(int b1, int b2, char *s) {
-	int len1, len2;
-	int **parsed = parse_input(b1, b2, s, &len1, &len2);
-	char *p1 = int_translate(b1, b2, parsed[0], len1);
-	char *p2 = NULL;
-	if (len2 != 0) 
-		p2 = int_translate(b1, b2, parsed[1], len2);
-	len1 = strlen(p1);
-	len2 = (!len2 ? 0 : strlen(p2));
-
-	char *concat = (char*)calloc((len1 + len2 + 1), sizeof(char));
-	check_alloc(concat);
-	concat = strcat(concat, p1);
-	if (len2 != 0) {
-		concat = strcat(concat, ".");
-		concat = strncat(concat, p2, min(12, len2));
+#define EPS 1e-30
+void translate_frac_part(int base, double frac, char *output) {
+	int i;
+	for (i = 0; i < 12; ++i) {
+		frac *= (double)base;
+		output[i] = num_to_digit_equiv((int)floor(frac));
+		frac -= floor(frac);
 	}
 
-	free(parsed[1]);
-	free(parsed[0]);
-	free(parsed);
-	free(p1);
-	free(p2);
+	for (i = 11; i >= 0; --i) {
+		if (output[i] != '0')
+			break;
+	}
+	output[i + 1] = 0;
+}
 
-	return concat;
+void translate(int b1, int b2, char *s, char *output) {
+	int i, pt_index = (int)strchrnul(s, '.') - (int)s;
+	double sum = 0;
+	for (i = 0; i < strlen(s); ++i) {
+		if (s[i] == '.') 
+			continue;
+
+		double eq = (double)digit_to_num_equiv(s[i]);
+		double p = pow(b1, pt_index - i - 1);
+		if (i >= pt_index)
+			p = pow(b1, pt_index - i);
+		sum += eq * p;
+	}
+
+	char int_part[49], frac_part[13];
+	translate_int_part(b2, (u64)floor(sum), int_part);
+	output[0] = 0;
+	strcat(output, int_part);
+	if (pt_index != strlen(s)) {
+		translate_frac_part(b2, sum - floor(sum), frac_part);
+		strcat(output, ".");
+		strcat(output, frac_part);
+	}
 }

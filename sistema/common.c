@@ -31,8 +31,8 @@ int digit_to_num_equiv(char x) {
 		return POINT;
 	else if (bounds(x, '0', '9'))
 		return x - '0';
-	else if (bounds(x, 'a', 'f'))	
-		return x - 'a' + 10;
+	else if (bounds(tolower(x), 'a', 'f'))	
+		return tolower(x) - 'a' + 10;
 	else
 		return ERROR;
 }

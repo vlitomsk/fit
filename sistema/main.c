@@ -10,11 +10,11 @@ int main() {
 	scanf("%d %d\n%s", &b1, &b2, inp);
 	if (!validate_input(b1, b2, inp)) {
 		printf("bad input\n");
-		return 1;
+		return 0;
 	}
 
 	char res[50];
-	translate2(b1, b2, inp, res);
+	translate(b1, b2, inp, res);
 	printf("%s\n", res);
 
 	return 0;

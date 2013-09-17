@@ -6,6 +6,8 @@
 #include "common.h"
 
 int validate_input(int b1, int b2, char *inp) {
+	if (inp[0] == '.' || inp[strlen(inp) - 1] == '.')
+		return 0;
 	if (!bounds(b1, 2, 16) || !bounds(b2, 2, 16)) 
 		return 0;
 
@@ -24,14 +26,25 @@ int validate_input(int b1, int b2, char *inp) {
 	return 1;
 }
 
+// для старых версий gcc
+char *strchrnul_(char *s, char c) {
+	char *sc = strrchr(s, c);
+	return (sc == NULL ? s + strlen(s) : sc);
+}
+
 void translate_int_part(int base, u64 n, char *output) {
 	int ost, i = 0;
-	while (n) {
-		ost = n % (u64)base;
-		output[i++] = num_to_digit_equiv(ost);
-		n /= (u64)base;
+	if (n) {
+		while (n) {
+			ost = n % (u64)base;
+			output[i++] = num_to_digit_equiv(ost);
+			n /= (u64)base;
+		}
+		output[i] = 0;
+	} else {
+		output[0] = '0';
+		output[1] = 0;
 	}
-	output[i] = 0;
 
 	reverse_string(output);	
 }
@@ -53,7 +66,7 @@ void translate_frac_part(int base, double frac, char *output) {
 }
 
 void translate(int b1, int b2, char *s, char *output) {
-	int i, pt_index = (int)strchrnul(s, '.') - (int)s;
+	int i, pt_index = (int)strchrnul_(s, '.') - (int)s;
 	double sum = 0;
 	for (i = 0; i < strlen(s); ++i) {
 		if (s[i] == '.') 
@@ -66,7 +79,7 @@ void translate(int b1, int b2, char *s, char *output) {
 		sum += eq * p;
 	}
 
-	char int_part[49], frac_part[13];
+	char int_part[49], frac_part[49];
 	translate_int_part(b2, (u64)floor(sum), int_part);
 	output[0] = 0;
 	strcat(output, int_part);

@@ -5,10 +5,10 @@ clean:
 	rm -f ./*.o
 
 compile:
-	gcc -c ./translator.c -o translator.o
-	gcc -c ./main.c -o main.o
-	gcc -c ./common.c -o common.o
-	gcc ./*.o -o main -lm -Os
+	gcc -c -O3 ./translator.c -o translator.o
+	gcc -c -O3 ./main.c -o main.o
+	gcc -c -O3 ./common.c -o common.o
+	gcc ./*.o -o main -lm -O3
 
 run:
 	./main

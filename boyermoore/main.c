@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <assert.h>
+#include <string.h>
 #include "bmoore.h"
 
 #define T(haystack, needle, retval) (assert(bmoore_search((haystack), (needle)) == (retval)))
@@ -43,6 +44,7 @@ main() {
 	fgets(needle, 16, stdin);
 	needle[strlen(needle) - 1] = 0;
 	fread(haystack, sizeof(char), 1000, stdin);
+	haystack[strlen(haystack) - 1] = 0;
 	// printf("Needle: %s\nHaystack: %s\n", needle, haystack);
 	bmoore_search(haystack, needle);
 	//bmoore_search("this is simple example", "example");

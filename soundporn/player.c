@@ -1,0 +1,131 @@
+#include <math.h>
+#include <stdlib.h>
+#include <stdio.h>
+#include <string.h>
+#include "player.h"
+
+int tempo = 80,
+	ticks_per_semibreve; // тиков с частотой дискретизации за целую ноту
+
+int note_freqs[OCTAVES][NOTES];
+
+void fill_freqs(void) {
+	// for Fifth octave (C8, C#8, ...)
+	int l = OCTAVES - 1;
+	note_freqs[l][C]  = 8372;
+	note_freqs[l][Db] = 8870;
+	note_freqs[l][D]  = 9397;
+	note_freqs[l][Eb] = 9956;
+	note_freqs[l][E]  = 10548;
+	note_freqs[l][F]  = 11175;
+	note_freqs[l][Gb] = 11840;
+	note_freqs[l][G]  = 12544;
+	note_freqs[l][Ab] = 13290;
+	note_freqs[l][A]  = 14080;
+	note_freqs[l][Hb] = 14917;
+	note_freqs[l][H]  = 15804;
+
+	int i, j;
+	for (i = l - 1; i >= 0; --i) {
+		for (j = 0; j < NOTES; ++j) 
+			note_freqs[i][j] = note_freqs[i + 1][j] >> 1;
+	}
+}
+
+inline void set_tempo(int t) {
+	tempo = t;
+}
+
+void init_player() {
+	fill_freqs();
+	ticks_per_semibreve = PCM_FREQ * 60 / tempo;
+}
+
+/* 
+  octave is from interval 1..8, 
+  duration is relative duration of note (1.0 is semibreve)
+*/
+
+void play_note(tnote note, int octave, float duration) {
+	int i,
+		ticks = floor(duration * ticks_per_semibreve);
+	int modulo = PCM_FREQ / note_freqs[octave - 1][note];
+
+	for (i = 0; i < ticks; ++i) {
+		if (i % modulo == 0) {
+			if (note != sil) {
+				putchar(255);
+			}
+		} else {
+			putchar(0);
+		}
+	}
+}
+
+tnote parse_note(char char_val) {
+	tnote note = sil;
+	switch (char_val) {
+		case 'C': note = C;
+			break;
+		case 'D': note = D;
+			break;
+		case 'E': note = E;
+			break;
+		case 'F': note = F;
+			break;
+		case 'G': note = G;
+			break;
+		case 'A': note = A;
+			break;
+		case 'H': note = H;
+			break;
+		case '0': note = sil;
+			break;
+		default:
+			fprintf(stderr, "Error parsing note %c\n", char_val);
+			break;
+	}
+
+	return note;
+}
+
+/* 
+ Format:
+   <Note><Octave><Duration>
+   Note: C, Db, D, ...
+   Octave: [1..8]
+   Duration: 1, 2, 4, ... - semibreve, half, quarter, ...
+*/
+void play_token(const char *tok, int len) {
+	tnote note;
+	int octave;
+	float duration;
+	note = parse_note(tok[0]);
+	octave = tok[1] - '0';
+	if (tok[1] == 'b') {
+		--note;
+		octave = tok[2] - '0';
+		duration = (float)(tok[3] - '0');
+	} else
+		duration = (float)(tok[2] - '0');
+	duration = 1.0 / duration;
+
+	// fprintf(stderr, "Note: %d; Octave: %d; Duration: %f\n", note, octave, duration);
+
+	play_note(note, octave, duration);
+}
+
+// splits seq by spaces and applies play_token to each token (see fmt there)
+void play_sequence(const char *seq) {
+	if (strlen(seq) < 3) 
+		return;
+	int last_space = 0,
+		i;
+	for (i = 0; i < strlen(seq); ++i) {
+		if (seq[i] == ' ') {
+			play_token(seq + last_space, i - last_space);
+			last_space = i + 1;
+		}
+	}
+	play_token(seq + last_space, i - last_space);
+}

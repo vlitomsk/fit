@@ -6,6 +6,7 @@ clean:
 
 compile:
 	gcc -c ./player.c -o player.o
+	gcc -c ./wave.c -o wave.o
 	gcc -c ./main.c -o main.o
 	gcc ./*.o -o main -lm
 

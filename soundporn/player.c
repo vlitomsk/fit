@@ -4,8 +4,8 @@
 #include <string.h>
 #include "player.h"
 
-int tempo = 80,
-	ticks_per_semibreve; // тиков с частотой дискретизации за целую ноту
+static volatile int tempo;
+int ticks_per_semibreve; // тиков с частотой дискретизации за целую ноту
 
 int note_freqs[OCTAVES][NOTES];
 
@@ -32,20 +32,39 @@ void fill_freqs(void) {
 	}
 }
 
-inline void set_tempo(int t) {
+void set_tempo(int t) {
 	tempo = t;
+	ticks_per_semibreve = PCM_FREQ * 60 / tempo;
 }
 
 void init_player() {
 	fill_freqs();
-	ticks_per_semibreve = PCM_FREQ * 60 / tempo;
+	set_tempo(200);
+}
+
+bool fade_on = true, vibrato_on = true;
+void set_fade(bool enable) {
+	fade_on = enable;
+}
+
+void set_vibrato(bool enable) {
+	vibrato_on = enable;
+}
+
+char calc_char(int i, int ticks) {
+	double tmp = 255.0;
+	if (vibrato_on)
+		tmp *= fabs(sin((double)i / 300));
+	if (fade_on)
+		tmp *= (double)(ticks - i) / (double)ticks;
+
+	return (char)floor(tmp);
 }
 
 /* 
   octave is from interval 1..8, 
   duration is relative duration of note (1.0 is semibreve)
 */
-
 void play_note(tnote note, int octave, float duration) {
 	int i,
 		ticks = floor(duration * ticks_per_semibreve);
@@ -54,7 +73,7 @@ void play_note(tnote note, int octave, float duration) {
 	for (i = 0; i < ticks; ++i) {
 		if (i % modulo == 0) {
 			if (note != sil) {
-				putchar(255);
+				putchar(calc_char(i, ticks));
 			}
 		} else {
 			putchar(0);

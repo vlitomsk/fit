@@ -65,19 +65,20 @@ char calc_char(int i, int ticks) {
   octave is from interval 1..8, 
   duration is relative duration of note (1.0 is semibreve)
 */
-void play_note(tnote note, int octave, float duration) {
+void play_note(tnote note, int octave, float duration, WaveFile *wav) {
 	int i,
 		ticks = floor(duration * ticks_per_semibreve);
 	int modulo = PCM_FREQ / note_freqs[octave - 1][note];
 
 	for (i = 0; i < ticks; ++i) {
-		if (i % modulo == 0) {
-			if (note != sil) {
-				putchar(calc_char(i, ticks));
-			}
-		} else {
-			putchar(0);
-		}
+		char char_val = 0;
+		if (i % modulo == 0 && note != sil) 
+			char_val = calc_char(i, ticks);
+		
+		if (wav)
+			*wav = push_wave_unit(char_val, *wav);
+		else
+			putchar(char_val);
 	}
 }
 
@@ -115,7 +116,7 @@ tnote parse_note(char char_val) {
    Octave: [1..8]
    Duration: 1, 2, 4, ... - semibreve, half, quarter, ...
 */
-void play_token(const char *tok, int len) {
+void play_token(const char *tok, int len, WaveFile *wav) {
 	tnote note;
 	int octave;
 	float duration;
@@ -131,20 +132,20 @@ void play_token(const char *tok, int len) {
 
 	// fprintf(stderr, "Note: %d; Octave: %d; Duration: %f\n", note, octave, duration);
 
-	play_note(note, octave, duration);
+	play_note(note, octave, duration, wav);
 }
 
 // splits seq by spaces and applies play_token to each token (see fmt there)
-void play_sequence(const char *seq) {
+void play_sequence(const char *seq, WaveFile *wav) {
 	if (strlen(seq) < 3) 
 		return;
 	int last_space = 0,
 		i;
 	for (i = 0; i < strlen(seq); ++i) {
 		if (seq[i] == ' ') {
-			play_token(seq + last_space, i - last_space);
+			play_token(seq + last_space, i - last_space, wav);
 			last_space = i + 1;
 		}
 	}
-	play_token(seq + last_space, i - last_space);
+	play_token(seq + last_space, i - last_space, wav);
 }

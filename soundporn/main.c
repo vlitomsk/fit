@@ -27,11 +27,27 @@ main() {
 	// 	play_note(sil, 0, 1);	
 	// }
 	
+	// set_vibrato(true);
+	// set_fade(true);
 	// set_tempo(100);
-	// play_sequence("E41 G41 A41 002 E41 G41 Hb42 A41 001 E41 G41 A41 002 G41 E41 001"); // smoke on the water
-	// play_sequence("A24 C34 D34 Eb34 E34 G34 A34 C44 D44 Eb44 E44 G44 A44 C54"); // A blues scale
+	// for (;;) {
+	// 	play_sequence("E32 G32 H32 Db42 E42 Db42 H32 G32", 0);
+	// 	play_sequence("E32 G32 H32 Db42 E42 Db42 H32 G32", 0);
+	// 	play_sequence("A32 C42 E42 Gb42 A42 Gb42 E42 C42", 0);
+	// 	play_sequence("E32 G32 H32 Db42 E42 Db42 H32 G32", 0);
+	// 	play_sequence("H32 D42 Gb42 Ab42 H42 Ab42 Gb42 D42", 0);
+	// 	play_sequence("E32 G32 H32 Db42 Gb42 004 Gb42 001", 0);		
+	// }
 
-	WaveFile wav = open_wave_file("./shiroka.wav");
+	
+
+	WaveFile wav = open_wave_file("./outp.wav");
+	set_tempo(100);
+	play_sequence("E41 G41 A41 002 E41 G41 Hb42 A41 001 E41 G41 A41 002 G41 E41 001", &wav); // smoke on the water
+	play_sequence("A24 C34 D34 Eb34 E34 G34 A34 C44 D44 Eb44 E44 G44 A44 C54", &wav); // A blues scale
+
+	set_fade(true);
+	set_vibrato(true);
 	set_tempo(35);
 	play_sequence("A32 034 D42 004 Db44 H34 Db44 D44 E44 D42 A31 001", &wav); // широка страна моя родная
 	play_sequence("A32 034 D42 004 Db44 H34 Db44 D44 E44 D42 A31 001", &wav); // широка страна моя родная

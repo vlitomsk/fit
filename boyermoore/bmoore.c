@@ -29,7 +29,7 @@ int max_common_suffix(const char *haystack, const char *needle, int offset, char
 	for (i = offset + strlen(needle) - 1; i >= offset; --i, ++len) {
 		printf("%d ", i + 1);
 		if (haystack[i] != needle[i - offset]) {
-			printf("Not equal! Index = %d, char[haystack] = %c\n", i, haystack[i]);
+			// printf("Not equal! Index = %d, char[haystack] = %c\n", i, haystack[i]);
 			*stop_char = haystack[i];
 			break;
 		}
@@ -55,7 +55,7 @@ int bmoore_search(const char *haystack, const char *needle) {
 	while (offset + nlen < strlen(haystack) + 1) {
 		mcs = max_common_suffix(haystack, needle, offset, &stop_char);
 		if (mcs == nlen) {
-			printf("FOUND\n");
+			// printf("FOUND\n");
 			found_index = (found_index < 0 ? offset : found_index);
 			offset += nlen;
 		} else if (mcs < 0) {
@@ -74,10 +74,10 @@ int bmoore_search(const char *haystack, const char *needle) {
 				offset = -1;
 				break;
 			}
-			printf("Offset: %d\n", offset);
+			// printf("Offset: %d\n", offset);
 		}
 	} 
-	putchar('\n');
+	// putchar('\n');
 	free(pi);
 	return found_index;
 }

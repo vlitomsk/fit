@@ -46,7 +46,7 @@ int bmoore_search(const char *haystack, const char *needle) {
 	// printf("Find %s in %s\n", needle, haystack);
 
 	int stop_table[TABLE_LEN],
-		*pi = (int*)malloc(sizeof(int) * strlen(needle)),
+		pi[20],
 		offset = 0, stop_index, mcs, found_index = -1;
 	char stop_char;
 	pi_function(needle, pi);
@@ -77,8 +77,7 @@ int bmoore_search(const char *haystack, const char *needle) {
 			// printf("Offset: %d\n", offset);
 		}
 	} 
-	// putchar('\n');
-	free(pi);
+
 	return found_index;
 }
 

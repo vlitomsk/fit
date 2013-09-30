@@ -27,29 +27,26 @@ void test() {
 	test_bmoore();
 }
 
+void newline_trim(char *s) {
+	int l = strlen(s);
+	if (s[l - 1] == '\n')
+		s[l - 1] = 0;
+	l = strlen(s);
+	if (s[l - 1] == '\r')
+		s[l - 1] = 0;
+}
+
+#define HAYSTACK_SZ 100
+#define NEEDLE_SZ 20
+
 main() {
 	//test();
 
-	char needle[18], haystack[1001];
-	fgets(needle, 18, stdin);
+	char needle[NEEDLE_SZ], haystack[HAYSTACK_SZ];
+	fgets(needle, NEEDLE_SZ - 1, stdin);
+	newline_trim(needle);
 
-	needle[strlen(needle) - 1] = 0;
-	if (needle[strlen(needle) - 1] == '\r')
-		needle[strlen(needle) - 1] = 0;
-	
-/*	fread(haystack, sizeof(char), 1000, stdin);
-	if (haystack[strlen(haystack) - 1] == '\n')
-		haystack[strlen(haystack) - 1] = 0;
-	bmoore_search(haystack, needle);
-*/
-
-	while (fgets(haystack, 1000, stdin)) {
-		fgets(haystack, 1000, stdin);
-		// printf("Needle: %s\nHaystack: %s\n", needle, haystack);
-		if (haystack[strlen(haystack) - 1] == '\n')
-			haystack[strlen(haystack) - 1] = 0;
-		if (haystack[strlen(haystack) - 1] == '\r')
-			haystack[strlen(haystack) - 1] = 0;
+	while (fread(haystack, sizeof(char), HAYSTACK_SZ - 1, stdin)) {
 		bmoore_search(haystack, needle);
 	}
 

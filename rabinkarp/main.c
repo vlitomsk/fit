@@ -1,5 +1,6 @@
 #include "rkarp.h"
 #include <stdio.h>
+#include <string.h>
 
 #define HAYSTACK_SZ 100
 #define NEEDLE_SZ 20
@@ -17,15 +18,14 @@ int main() {
 	char needle[NEEDLE_SZ], haystack[HAYSTACK_SZ];
 	fgets(needle, NEEDLE_SZ - 1, stdin);
 	newline_trim(needle);
-	int count = 0, i;
+	int pos = 1;
 
+	printf("%d ", rkhash(needle, strlen(needle)));
 
-	while (fread(haystack, sizeof(char), HAYSTACK_SZ - 1, stdin)) {
-		rksearch(needle, haystack);
-		++count;
-	}
-	if (count == 0) {
-		printf("%d\n", rkhash(needle, strlen(needle)));
+	// while (fread(haystack, sizeof(char), HAYSTACK_SZ - 1, stdin)) {
+	while (fgets(haystack, HAYSTACK_SZ - 1, stdin)) {
+		rksearch(needle, haystack, pos);
+		pos += strlen(haystack);
 	}
 
 	return 0;

@@ -25,18 +25,16 @@ inline hash_t update_hash(hash_t *old_hash, char add_char, int hash_len) {
 
 // +7 (383) 330 82 11
 // Морской проспект, 25/1
-int rksearch(const char *needle, const char *haystack) {
+int rksearch(const char *needle, const char *haystack, int pos) {
 	int i, offset = 0, n_len = strlen(needle);
 	int found_pos = -1;
 	unsigned int n_hash = rkhash(needle, n_len),
 				 h_hash = rkhash(haystack, n_len);
 
-	printf("%d ", n_hash);
-
 	while (offset + n_len < strlen(haystack) + 1) {
 		if (n_hash == h_hash) {			
 			for (i = 0; i < n_len; ++i) {
-				printf("%d ", offset + i + 1);
+				printf("%d ", offset + i + pos);
 				if (needle[i] != haystack[offset + i])
 					break;
 			}

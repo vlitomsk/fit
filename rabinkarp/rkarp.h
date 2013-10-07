@@ -2,7 +2,7 @@
 #define RABINKARP_H_INCLUDED
 
 typedef unsigned int hash_t;
-extern int rksearch(const char *needle, const char *haystack);
+extern int rksearch(const char *needle, const char *haystack, int pos);
 extern hash_t rkhash(const char *s, int len);
 
 #endif

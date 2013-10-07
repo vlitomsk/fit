@@ -63,7 +63,7 @@ int bmoore_search(const char *haystack, const char *needle) {
 			break;
 		} else {
 			stop_index = stop_table[stop_char];
-			if (stop_index < 0 && mcs == 0) {
+			if (stop_index == -1 && mcs == 0) {
 				offset += nlen;
 			} else if (stop_index > nlen - 1 - mcs || stop_index < 0) {
 				offset += nlen - pi[nlen - 1];

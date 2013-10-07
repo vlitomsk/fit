@@ -1,4 +1,4 @@
-all: compile
+all: compile run
 
 #CC = gcc
 CC = i686-w64-mingw32-gcc
@@ -9,7 +9,7 @@ clean:
 	rm -f ./main.exe
 
 compile: clean
-	$(CC) -c -O3 ./bmoore.c -o bmoore.o
+	$(CC) -c -O3 ./rkarp.c -o rkarp.o
 	$(CC) -c -O3 ./main.c -o main.o
 	$(CC) ./*.o -o main.exe -lm
 
@@ -17,4 +17,4 @@ run: clean compile
 	wine ./main.exe < input 
 	
 test: compile
-	wine ./testLab2.exe main.exe
+	wine ./testLab11.exe main.exe

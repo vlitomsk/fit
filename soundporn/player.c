@@ -51,6 +51,14 @@ void set_vibrato(bool enable) {
 	vibrato_on = enable;
 }
 
+void setup_vibrato(double k) {
+	
+}
+
+void setup_fade(double percent_to) {
+
+}
+
 char calc_char(int i, int ticks) {
 	double tmp = 255.0;
 	if (vibrato_on)

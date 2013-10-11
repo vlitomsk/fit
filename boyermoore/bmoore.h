@@ -6,6 +6,6 @@
    если needle найден в haystack
   Иначе возвращает -1
 */
-extern int bmoore_search(const char *haystack, const char *needle);
+extern int bmoore_search(const char *haystack, const char *needle, int pos);
 
 #endif

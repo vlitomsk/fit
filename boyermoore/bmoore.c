@@ -9,25 +9,24 @@
 void fill_stop_table(const char *needle, int *table) {
 	int i;
 	for (i = 0; i < TABLE_LEN; ++i)
-		table[i] = -1;
+		table[i] = strlen(needle);
 
-	for (i = strlen(needle); i >= 0; --i) {
-		char c = needle[i];
-		if (table[c] < 0) {
-			table[c] = i;
-		}
+	for (i = 0; i < strlen(needle) - 1; ++i) {
+		table[ needle[i] ] = i;
 	}
 }
 
 // offset - смещение строки needle в строке haystack
 // возвращает длину совпавшего суффикса
-int max_common_suffix(const char *haystack, const char *needle, int offset, char *stop_char) {
+int max_common_suffix(
+	const char *haystack, const char *needle, int offset, char *stop_char, int pos)
+{
 	if (offset + strlen(needle) > strlen(haystack))
 		return -1;
 	// printf("%d\n", offset);
 	int i, len = 0;
 	for (i = offset + strlen(needle) - 1; i >= offset; --i, ++len) {
-		printf("%d ", i + 1);
+		printf("%d ", i + pos);
 		if (haystack[i] != needle[i - offset]) {
 			// printf("Not equal! Index = %d, char[haystack] = %c\n", i, haystack[i]);
 			*stop_char = haystack[i];
@@ -38,9 +37,9 @@ int max_common_suffix(const char *haystack, const char *needle, int offset, char
 	return len;
 }
 
-int bmoore_search(const char *haystack, const char *needle) {
+int bmoore_search(const char *haystack, const char *needle, int pos) {
 	int nlen = strlen(needle);
-	if (nlen > strlen(haystack))  {
+	if (nlen > strlen(haystack)) {
 		return -1;
 	}
 	// printf("Find %s in %s\n", needle, haystack);
@@ -53,7 +52,7 @@ int bmoore_search(const char *haystack, const char *needle) {
 	fill_stop_table(needle, stop_table);
 
 	while (offset + nlen < strlen(haystack) + 1) {
-		mcs = max_common_suffix(haystack, needle, offset, &stop_char);
+		mcs = max_common_suffix(haystack, needle, offset, &stop_char, pos);
 		if (mcs == nlen) {
 			// printf("FOUND\n");
 			found_index = (found_index < 0 ? offset : found_index);
@@ -63,9 +62,10 @@ int bmoore_search(const char *haystack, const char *needle) {
 			break;
 		} else {
 			stop_index = stop_table[stop_char];
-			if (stop_index == -1 && mcs == 0) {
+			
+			if (stop_index == strlen(needle) && mcs == 0) {
 				offset += nlen;
-			} else if (stop_index > nlen - 1 - mcs || stop_index < 0) {
+			} else if (stop_index > nlen - 1 - mcs) {
 				offset += nlen - pi[nlen - 1];
 			} else {
 				offset += nlen - mcs - stop_index - 1;

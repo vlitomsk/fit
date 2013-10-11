@@ -22,7 +22,6 @@ int main() {
 
 	printf("%d ", rkhash(needle, strlen(needle)));
 
-	// while (fread(haystack, sizeof(char), HAYSTACK_SZ - 1, stdin)) {
 	while (fgets(haystack, HAYSTACK_SZ - 1, stdin)) {
 		rksearch(needle, haystack, pos);
 		pos += strlen(haystack);

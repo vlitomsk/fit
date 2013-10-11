@@ -4,7 +4,7 @@
 #include <string.h>
 #include "bmoore.h"
 
-#define T(haystack, needle, retval) (assert(bmoore_search((haystack), (needle)) == (retval)))
+#define T(haystack, needle, retval) (assert(bmoore_search((haystack), (needle), 1) == (retval)))
 void test_bmoore() {
 	T("a", "aa", -1);
 	T("ba", "aa", -1);
@@ -45,10 +45,18 @@ main() {
 	char needle[NEEDLE_SZ], haystack[HAYSTACK_SZ];
 	fgets(needle, NEEDLE_SZ - 1, stdin);
 	newline_trim(needle);
+	int pos = 1;
 
-	while (fread(haystack, sizeof(char), HAYSTACK_SZ - 1, stdin)) {
-		bmoore_search(haystack, needle);
+	while (fgets(haystack, HAYSTACK_SZ - 1, stdin)) {
+		// printf("Haystack: %s\n", haystack);
+		bmoore_search(haystack, needle, pos);
+		pos += strlen(haystack);
 	}
+
+	// while (fread(haystack, sizeof(char), HAYSTACK_SZ - 1, stdin)) {
+	// 	printf("Haystack: %s\n", haystack);
+	// 	bmoore_search(haystack, needle, 1);
+	// }
 
 	return 0;
 }

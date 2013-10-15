@@ -15,10 +15,10 @@ int main() {
 	for (i = 0; i < n; ++i)
 		scanf("%d", &arr[i]);
 
-	heapsort(arr, n, res);
+	heapsort(arr, n);
 
 	for (i = 0; i < n; ++i)
-		printf("%d ", res[i]);
+		printf("%d ", arr[i]);
 
 	free(arr);
 	free(res);

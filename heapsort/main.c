@@ -3,11 +3,10 @@
 #include "heapsort.h"
 
 int main() {
-	int n, *arr, i, *res;
+	int n, *arr, i;
 	scanf("%d", &n);
 	arr = (int*)malloc(sizeof(int) * n);
-	res = (int*)malloc(sizeof(int) * n);
-	if (!arr || !res) {
+	if (!arr) {
 		perror("Can't allocate bytes!\n");
 		return 0;
 	}
@@ -21,7 +20,6 @@ int main() {
 		printf("%d ", arr[i]);
 
 	free(arr);
-	free(res);
 	return 0;
 }
 

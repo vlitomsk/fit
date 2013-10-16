@@ -29,7 +29,8 @@ int main() {
 	}
 
 	for (; n > 0; --n) {
-		next_permutation(perm);
+		if (!next_permutation(perm))
+			break;
 		printf("%s\n", perm);
 	}
 	

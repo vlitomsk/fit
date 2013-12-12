@@ -106,11 +106,13 @@ void to_downcase(char *w) {
 	}
 }
 
+#define MAX_WORDS 100000
+
 int main() {
 	freopen("in.txt", "r", stdin);
 	char word[MAX_WORD_LEN];
 
-	/*WordInfo infos[MAX_WORDS];
+	WordInfo infos[MAX_WORDS];
 
 	
 	int i, wc = 0;
@@ -135,7 +137,7 @@ int main() {
 		printf("%s: %d\n", infos[i].word, infos[i].count);
 		free(infos[i].word);
 	}
-	*/
+	/*
 
 	// Node trie;
 	trie = init_node();
@@ -144,6 +146,7 @@ int main() {
 	memset(buf, 0, sizeof(char) * MAX_WORD_LEN);
 
 	/* Строим бор */
+	/*
 	while (scanf("%s", word) != EOF) {
 		char *trimmed = trim(word);
 		to_downcase(trimmed);
@@ -154,7 +157,7 @@ int main() {
 
 	memset(buf, 0, sizeof(char) * MAX_WORD_LEN);
 
-	count_traverse(&trie, buf);
+	count_traverse(&trie, buf);*/
 
 	return 0;
 }

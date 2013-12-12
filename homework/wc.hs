@@ -48,7 +48,17 @@ traverse' s (Node xs) = do
 		
 traverse :: Trie -> IO ()
 traverse  = traverse' []
+ 
+chTrimmable :: Char -> Bool
+chTrimmable c = any (==c)".,?!- \"\';:()"
 
+trim :: String -> String
+trim [] = []
+trim s 
+	| chTrimmable (head s) = trim $ tail s
+	| chTrimmable (last s) = trim $ init s
+	| otherwise = s
+	
 downcase = map toLower
 
 main :: IO ()
@@ -64,4 +74,4 @@ main = do
 		else do
 			line <- hGetLine hdl
 			--putStrLn line
-			iter hdl $ foldl' (flip addToTrie) tracc $ map downcase $ words line
+			iter hdl $ foldl' (flip addToTrie) tracc $ map (trim . downcase) $ words line

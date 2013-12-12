@@ -14,62 +14,6 @@ u32 pows3[] = {
 	1162261467,3486784401
 };
 
-/* Бор */
-typedef struct {
-	char c;
-	Node_t *next = NULL;
-	int count = 0; // количество слов, оканчивающихся на данном ребре
-} Edge;
-
-typedef struct Node_t {
-	Edge *edges = NULL;
-	int E = 0; // количество ребер 
-} Node;
-
-Node *add_edge(Node *node, char c) {
-	Edge e = (Edge) {c, (Node) {NULL, 0}, 0};
-	node->edges = (Edge*)realloc(node->edges, sizeof(Edge) * (node->E + 1));
-	if (!node->edges) {
-		perror("Can't allocate memory");
-		return NULL;
-	}
-	
-	node->edges[node->E++] = e;
-	return node;
-}
-
-void add_to_trie(Node *t, const char *word) {
-	int i;
-	Edge *edges = t->edges;	
-	for (i = 0; i < t->E; ++i) {
-		if (edges[i].c == *word) 
-			break;
-	}
-
-	if (i == t->E) // не нашлось ребро с *word
-		add_edge(t, *word); 
-	
-	if (*(word + 1) == 0)
-		edges[i].count++;
-	else
-		add_to_trie(edges[i].next, word + 1);
-}
-
-void count_traverse(const Node *trie, char *buf) {
-	if (!trie)
-		return;
-
-	int i, L = strlen(buf);
-	Edge *edges = trie->edges;
-	for (i = 0; i < trie->E; ++i) {
-		buf[L] = edges[i].c;
-		if (edges[i].count != 0) 
-			printf("Traverse: %s : %d times\n", buf, edges[i].count);
-		count_traverse(edges[i].next, buf);
-	}
-	buf[L] = 0;
-}
-
 int max(int a, int b) {
 	return (a > b ? a : b);
 }
@@ -125,13 +69,16 @@ void to_downcase(char *w) {
 	}
 }
 
-int main() {
-	freopen("in.txt", "r", stdin);
+int main(int argc, char **argv) {
+	if (argc != 2) {
+		fprintf(stderr, "Usage: %s FILE\n", argv[0]);
+		return 1;
+	}
+	freopen(argv[1], "r", stdin);
 	char word[MAX_WORD_LEN];
 
 	WordInfo infos[MAX_WORDS];
 
-	/*
 	int i, wc = 0;
 	while (scanf("%s", word) != EOF) {
 		char *trimmed = trim(word);
@@ -154,21 +101,7 @@ int main() {
 		printf("%s: %d\n", infos[i].word, infos[i].count);
 		free(infos[i].word);
 	}
-	*/
-
-	Node trie;
-
-	/* Строим бор */
-	while (scanf("%s", word) != EOF) {
-		char *trimmed = trim(word);
-		to_downcase(trimmed);
-		add_to_trie(&trie, trimmed);
-	}
-
-	char buf[MAX_WORD_LEN]; // для обхода дерева
-	memset(buf, 0, sizeof(char) * MAX_WORD_LEN);
-
-	count_traverse(trie, buf);
+	
 
 	return 0;
 }

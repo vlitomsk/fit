@@ -55,6 +55,7 @@ main :: IO ()
 main = do
 	args <- getArgs
 	handle <- openFile (args !! 0) ReadMode
+	--handle <- openFile "vm" ReadMode
 	trie <- iter handle (Node [])
 	traverse trie
 	where iter hdl tracc = do
@@ -63,4 +64,4 @@ main = do
 		else do
 			line <- hGetLine hdl
 			--putStrLn line
-			iter hdl $ foldl (flip addToTrie) tracc $ map downcase $ words line
+			iter hdl $ foldl' (flip addToTrie) tracc $ map downcase $ words line

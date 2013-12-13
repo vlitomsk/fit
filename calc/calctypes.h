@@ -1,20 +1,14 @@
 #ifndef CALC_TYPES_H
 #define CALC_TYPES_H
 
+#include <stdio.h>
+
 typedef enum {false, true} bool;
 typedef int Number;
 
-inline Number parse_number(const char *s) {
-	return atoi(s);
-}
-
-void number_to_str(Number n, char *s, int sz) {
-	snprintf(s, sz, "%d", n);
-}
-
-void p_number(Number n) {
-	printf("%d", n);
-}
+extern inline Number parse_number(const char *s);
+extern void number_to_str(Number n, char *s, int sz);
+extern void p_number(Number n);
 
 typedef enum {
 	EvalOk = 0,
@@ -24,83 +18,31 @@ typedef enum {
 	TokenOk = 1
 } Status;
 
-bool status_ok(Status s) {
-	return (s >= 0);
-}
+extern bool status_ok(Status s);
 
 typedef struct {
 	Number res;
 	Status st;
 } EvalRes;
 
-void p_evalres(EvalRes r) {
-	if (r.st == SyntaxError)
-		printf("syntax error\n");
-	else if (r.st == DivByZero)
-		printf("division by zero\n");
-	else
-		p_number(r.res); 
-}
+extern void p_evalres(EvalRes r);
+extern inline EvalRes evdone(Number res); // Evaluation OK
+extern inline EvalRes everr(Status st); // Evaluation error
 
-inline EvalRes evdone(Number res) { // Evaluation OK
-	return (EvalRes) { res, EvalOk }; 
-}
+extern inline EvalRes number_add(Number a, Number b);
+extern inline EvalRes number_sub(Number a, Number b);
+extern inline EvalRes number_mul(Number a, Number b);
+extern inline EvalRes number_div(Number a, Number b);
+extern inline EvalRes number_neg(Number a, Number stub);
 
-inline EvalRes everr(Status st) { // Evaluation error
-	return (EvalRes) { (Number)0, st };
-}
+extern EvalRes binop_res(EvalRes a, EvalRes b, EvalRes (*binop)(Number, Number));
+extern EvalRes add_res(EvalRes a, EvalRes b);
+extern EvalRes sub_res(EvalRes a, EvalRes b);
+extern EvalRes mul_res(EvalRes a, EvalRes b);
+extern EvalRes div_res(EvalRes a, EvalRes b);
+extern EvalRes neg_res(EvalRes a);
 
-inline EvalRes number_add(Number a, Number b) {
-	return evdone(a + b);
-}
-
-inline EvalRes number_sub(Number a, Number b) {
-	return evdone(a - b);
-}
-
-inline EvalRes number_mul(Number a, Number b) {
-	return evdone(a * b);
-}
-
-inline EvalRes number_div(Number a, Number b) {
-	puts("division");
-	if (b == 0)
-		return everr(DivByZero);
-	return evdone(a / b);
-}
-
-inline EvalRes number_neg(Number a, Number stub) {
-	return evdone(-a);
-}
-
-EvalRes binop_res(EvalRes a, EvalRes b, EvalRes (*binop)(Number, Number)) {
-	/* Приоритет синтаксической ошибки выше */
-	if (a.st == SyntaxError || b.st == SyntaxError) 
-		return everr(SyntaxError);
-	if (a.st == DivByZero || b.st == DivByZero)
-		return everr(DivByZero);
-	return binop(a.res, b.res);
-}
-
-EvalRes add_res(EvalRes a, EvalRes b) {
-	return binop_res(a, b, number_add);
-}
-
-EvalRes sub_res(EvalRes a, EvalRes b) {
-	return binop_res(a, b, number_sub);
-}
-
-EvalRes mul_res(EvalRes a, EvalRes b) {
-	return binop_res(a, b, number_mul);
-}
-
-EvalRes div_res(EvalRes a, EvalRes b) {
-	return binop_res(a, b, number_div);
-}
-
-EvalRes neg_res(EvalRes a) {
-	return binop_res(a, a, number_neg);
-}
+/* Token */
 
 typedef enum {
 	NUM = 1,
@@ -121,28 +63,9 @@ typedef struct {
 	Status st;
 } Token;
 
-inline Token invtok(void) {
-	return (Token) { END, 0, InvalidToken };
-} 
-
-inline Token numtok(Number n) {
-	return (Token) { NUM, n, TokenOk };
-}
-
-inline Token symtok(TokenType t) {
-	return (Token) { t, 0, TokenOk };
-}
-
-void p_token(Token t) {
-	if (t.st == TokenOk) {
-		if (t.t == END)
-			printf("Token: END\n");
-		else if (t.t == NUM) 
-			printf("Token: %f\n", t.val);
-		else 
-			printf("Token: %c\n", (char)t.t);
-	} else
-		printf("Token: INVALID TOKEN\n");
-}
+extern inline Token invtok(void);
+extern inline Token numtok(Number n);
+extern inline Token symtok(TokenType t);
+extern void p_token(Token t);
 
 #endif

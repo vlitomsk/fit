@@ -9,10 +9,29 @@
 
 #define MAX_TOKENS 1024
 
-Token get_number_token(const char *s, char **ptr);
+/* Обработка числового токена, используется в get_token */
+Token get_number_token(const char *s, char **ptr) {
+	bool has_pt = false;
+	int i;
+	for (i = 0; s[i]; ++i) {
+		if (isdigit(s[i]))
+			continue;
+
+		if (s[i] == '.') {
+			if (has_pt)
+				return invtok();
+			else
+				has_pt = true;
+		} else 
+			break;
+	}
+	*ptr = s + i ;
+
+	return numtok(parse_number(s));
+}
+
 /* ptr - указывает на место, с которого можно получать следующий токен */
 Token get_token(const char *s, char **ptr) {
-	// printf("ch = %d\n", *s);
 	if (isspace(*s))
 		return get_token(s + 1, ptr);
 
@@ -33,32 +52,11 @@ Token get_token(const char *s, char **ptr) {
 	return invtok();
 }
 
-Token get_number_token(const char *s, char **ptr) {
-	bool has_pt = false;
-	int i;
-	for (i = 0; s[i]; ++i) {
-		if (isdigit(s[i]))
-			continue;
-
-		if (s[i] == '.') {
-			if (has_pt)
-				return invtok();
-			else
-				has_pt = true;
-		} else 
-			break;
-	}
-	// printf("str: %d\n", s[i - 1]);
-	*ptr = s + i ;
-
-	return numtok(parse_number(s));
-}
-
 void tokenize(const char *s, Token *tokens, int sz, int *count) {
 	char *ptr = s;
 	*count = 0;
 	while (ptr && (*count) < sz) {
-		tokens[(*count)++] = get_token(ptr, &ptr);	
+		tokens[(*count)++] = get_token(ptr, &ptr); // ДОБАВИТЬ ВЫКИДЫВАНИЕ НАВЕРХ INVALID TOKEN!!
 	}
 }
 
@@ -66,129 +64,124 @@ void tokenize(const char *s, Token *tokens, int sz, int *count) {
 /* Вычисление expr, term, prim */
 
 /*** ГРАММАТИКА: ***/
-/* Expr:
- *   Term + Expr
- *	 Term - Expr
- *	 Term
- * 
- * Term:
- *   Prim * Term
- *   Prim / Term
- *   Prim
- *
- * Prim:
- *   (Expr)
- *   -Prim
- *   Number
- */
+/* Expr:           *
+ *   Term + Expr   *
+ *	 Term - Expr   *
+ *	 Term          *
+ *                 *
+ * Term:           *
+ *   Prim * Term   *
+ *   Prim / Term   *
+ *   Prim          *
+ *                 *
+ * Prim:           *
+ *   (Expr)        *
+ *   -Prim         *
+ *   Number        *
+ *******************/                
 
 EvalRes expr(const Token*, int, int);
 EvalRes term(const Token*, int, int);
 EvalRes prim(const Token*, int, int);
 
+/* самый абстрактный метод калькулятора */
 EvalRes eval(const char *s) {
 	int n;
 	Token tokens[MAX_TOKENS];
 	tokenize(s, tokens, MAX_TOKENS, &n);
-	return expr(tokens, 0, n);
+	return expr(tokens, 0, n - 1); // n-1 <=> без END
+}
+
+inline bool expr_splitter(Token t) {
+	return (t.t == PLUS || t.t == MINUS);
+}
+
+inline bool term_splitter(Token t) {
+	return (t.t == MUL || t.t == DIV);
+}
+
+/* Отщепляет Term от Expr, Prim от Term 
+	Возвращает индекс токена, заданного через splitter */
+int split(const Token *tok, int i, int n, bool (*splitter)(Token)) {
+	int j, depth = 0;
+	for (j = i; j < n; ++j) {
+		if (tok[j].t == LP)
+			++depth;
+		else if (tok[j].t == RP)
+			--depth;
+
+		// отщепляем на самом верхнем уровне вложенности
+		if (depth == 0 && splitter(tok[j])) 
+			break;
+	}
+	return j;
 }
 
 EvalRes expr(const Token *tok, int i, int n) {
-	printf("Expr :: ");p_token(*tok);
+	// printf("Expr :: ");p_token(*tok);
 	int j;
 
-	// пропускаем унарные минусы
+	// пропускаем унарные минусы мимо
 	for (j = i; j < n; ++j) {
 		if (tok[j].t != MINUS)
 			break;
 	}
-	// разделяем по плюсу/минусу (i + 1, чтобы не задеть унарный минус)
-	int depth = 0;
-	for (; j < n; ++j) {
-		if (tok[j].t == LP) 
-			++depth;
-		else if (tok[j].t == RP) 
-			--depth;
 
-		if (depth == 0 && (tok[j].t == PLUS || tok[j].t == MINUS))
-			break;
-	}
+	int op_index = split(tok, j, n, expr_splitter);  // индекс токена оператора ("+"/"-")
 
-	if (j == n) {
-		puts("expr -> term");
+	if (op_index == n) // оператора нет, тогда все выражение - терм
 		return term(tok, i, n);
-	}
 
-	EvalRes _term = term(tok, i, j), 
-					_expr = expr(tok, j + 1, n);
-	if (tok[j].t == PLUS) 
+	EvalRes _term = term(tok, i, op_index), 
+					_expr = expr(tok, op_index + 1, n);
+	if (tok[op_index].t == PLUS) 
 		return add_res(_term, _expr);
-	else if (tok[j].t == MINUS)
+	else 
 		return sub_res(_term, _expr);
 }
 
 EvalRes term(const Token *tok, int i, int n) {
-	printf("Term :: ");p_token(*tok);
-	int j;
+	// printf("Term :: ");p_token(*tok);
+	int op_index = split(tok, i, n, term_splitter);
 
-	// разделяем по умножению/делению
-	int depth = 0;
-	for (j = i; j < n; ++j) {
-		if (tok[j].t == LP) 
-			++depth;
-		else if (tok[j].t == RP) 
-			--depth;
-
-		if (depth == 0 && (tok[j].t == MUL || tok[j].t == DIV))
-			break;
-	}
-
-	if (j == n) {
-		puts("term -> prim");
+	if (op_index == n) 
 		return prim(tok, i, n);
-	}
 
-	EvalRes _prim = prim(tok, i, j),
-					_term = term(tok, j + 1, n);
-	if (tok[j].t == MUL)
+	EvalRes _prim = prim(tok, i, op_index),
+					_term = term(tok, op_index + 1, n);
+	if (tok[op_index].t == MUL)
 		return mul_res(_prim, _term);
-	else if (tok[j].t == DIV)
-		return mul_res(_prim, _term);
+	else
+		return div_res(_prim, _term);
 }
 
 EvalRes prim(const Token *tok, int i, int n) {
-	printf("Prim :: ");p_token(*tok);
-
-	if (tok[i].t == MINUS) { // unary minus 
-		puts("got unary");
+	if (tok[i].t == MINUS) 
 		return neg_res(prim(tok, i + 1, n));
-	}
 
 	if (tok[i].t == LP) {
 		// выделяем выражение для передачи в expr
 		int j;
 		int depth = 0;
 		for (j = i; j < n; ++j) {
-			if (tok[j].t == LP)
+			if (tok[j].t == LP) 
 				++depth;
-			else if (tok[j].t == RP)
+			else if (tok[j].t == RP) 
 				--depth;
 
 			if (depth == 0)
 				break;
 		}
 
-		if (depth != 0) {
-			puts("Parentheses mismatch");
-			return everr(SyntaxError); // Parentheses mismatch
-		}
-
-		puts("depth ok");
+		// j != n - 1, то в таком случае внутри Prim есть что-то правее (Expr)
+		if (depth != 0 || j != n - 1) 
+			return everr(SyntaxError); 
 
 		return expr(tok, i + 1, j);
 	} 
 
-	if (tok[i].t == NUM) 
+	// i != n - 1, то в таком случае внутри Prim есть что-то правее Number
+	if (tok[i].t == NUM && i == n - 1) 
 		return evdone(tok[i].val);
 
 	return everr(SyntaxError);

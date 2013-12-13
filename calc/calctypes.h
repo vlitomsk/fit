@@ -2,14 +2,18 @@
 #define CALC_TYPES_H
 
 typedef enum {false, true} bool;
-typedef double Number;
+typedef int Number;
+
+inline Number parse_number(const char *s) {
+	return atoi(s);
+}
 
 void number_to_str(Number n, char *s, int sz) {
-	snprintf(s, sz, "%f", n);
+	snprintf(s, sz, "%d", n);
 }
 
 void p_number(Number n) {
-	printf("%f", n);
+	printf("%d", n);
 }
 
 typedef enum {
@@ -20,7 +24,7 @@ typedef enum {
 	TokenOk = 1
 } Status;
 
-bool statusOk(Status s) {
+bool status_ok(Status s) {
 	return (s >= 0);
 }
 
@@ -46,10 +50,6 @@ inline EvalRes everr(Status st) { // Evaluation error
 	return (EvalRes) { (Number)0, st };
 }
 
-inline Number parse_number(const char *s) {
-	return atof(s);
-}
-
 inline EvalRes number_add(Number a, Number b) {
 	return evdone(a + b);
 }
@@ -63,6 +63,7 @@ inline EvalRes number_mul(Number a, Number b) {
 }
 
 inline EvalRes number_div(Number a, Number b) {
+	puts("division");
 	if (b == 0)
 		return everr(DivByZero);
 	return evdone(a / b);
@@ -73,7 +74,8 @@ inline EvalRes number_neg(Number a, Number stub) {
 }
 
 EvalRes binop_res(EvalRes a, EvalRes b, EvalRes (*binop)(Number, Number)) {
-	if (a.st == SyntaxError || b.st == SyntaxError)
+	/* Приоритет синтаксической ошибки выше */
+	if (a.st == SyntaxError || b.st == SyntaxError) 
 		return everr(SyntaxError);
 	if (a.st == DivByZero || b.st == DivByZero)
 		return everr(DivByZero);

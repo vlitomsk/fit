@@ -107,8 +107,8 @@ typedef enum {
 	MINUS = '-',
 	MUL = '*',
 	DIV = '/',
-	RP = '(',
-	LP = ')'
+	RP = ')',
+	LP = '('
 } TokenType;
 
 typedef struct {

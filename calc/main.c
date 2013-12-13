@@ -12,7 +12,7 @@
 Token get_number_token(const char *s, char **ptr);
 /* ptr - указывает на место, с которого можно получать следующий токен */
 Token get_token(const char *s, char **ptr) {
-	printf("ch = %d\n", *s);
+	// printf("ch = %d\n", *s);
 	if (isspace(*s))
 		return get_token(s + 1, ptr);
 
@@ -57,9 +57,9 @@ Token get_number_token(const char *s, char **ptr) {
 void tokenize(const char *s, Token *tokens, int sz, int *count) {
 	char *ptr = s;
 	*count = 0;
-	while (ptr && *count < sz)
-		tokens[*count++] = get_token(ptr, &ptr);	
-	// ДОАБВИТЬ ОБЯЗАТЕЛЬНО END!!
+	while (ptr && (*count) < sz) {
+		tokens[(*count)++] = get_token(ptr, &ptr);	
+	}
 }
 
 /*******************************/
@@ -94,12 +94,23 @@ EvalRes eval(const char *s) {
 }
 
 EvalRes expr(const Token *tok, int i, int n) {
-	p_token(*tok);
+	printf("Expr :: ");p_token(*tok);
 	int j;
 
-	// разделяем по плюсу/минусу
+	// пропускаем унарные минусы
 	for (j = i; j < n; ++j) {
-		if (tok[j].t == PLUS || tok[j].t == MINUS)
+		if (tok[j].t != MINUS)
+			break;
+	}
+	// разделяем по плюсу/минусу (i + 1, чтобы не задеть унарный минус)
+	int depth = 0;
+	for (; j < n; ++j) {
+		if (tok[j].t == LP) 
+			++depth;
+		else if (tok[j].t == RP) 
+			--depth;
+
+		if (depth == 0 && (tok[j].t == PLUS || tok[j].t == MINUS))
 			break;
 	}
 
@@ -117,12 +128,18 @@ EvalRes expr(const Token *tok, int i, int n) {
 }
 
 EvalRes term(const Token *tok, int i, int n) {
-	p_token(*tok);
+	printf("Term :: ");p_token(*tok);
 	int j;
 
 	// разделяем по умножению/делению
+	int depth = 0;
 	for (j = i; j < n; ++j) {
-		if (tok[j].t == MUL || tok[j].t == DIV)
+		if (tok[j].t == LP) 
+			++depth;
+		else if (tok[j].t == RP) 
+			--depth;
+
+		if (depth == 0 && (tok[j].t == MUL || tok[j].t == DIV))
 			break;
 	}
 
@@ -140,10 +157,12 @@ EvalRes term(const Token *tok, int i, int n) {
 }
 
 EvalRes prim(const Token *tok, int i, int n) {
-	p_token(*tok);
+	printf("Prim :: ");p_token(*tok);
 
-	if (tok[i].t == MINUS) // unary minus
+	if (tok[i].t == MINUS) { // unary minus 
+		puts("got unary");
 		return neg_res(prim(tok, i + 1, n));
+	}
 
 	if (tok[i].t == LP) {
 		// выделяем выражение для передачи в expr
@@ -159,8 +178,12 @@ EvalRes prim(const Token *tok, int i, int n) {
 				break;
 		}
 
-		if (depth != 0)
+		if (depth != 0) {
+			puts("Parentheses mismatch");
 			return everr(SyntaxError); // Parentheses mismatch
+		}
+
+		puts("depth ok");
 
 		return expr(tok, i + 1, j);
 	} 
@@ -174,13 +197,13 @@ EvalRes prim(const Token *tok, int i, int n) {
 #define EXPR_LEN (MAX_TOKENS)
 
 int main() {
-	// char s_expr[EXPR_LEN];
-	// fgets(s_expr, EXPR_LEN, stdin);
-	// EvalRes res = eval(s_expr);
-	// p_evalres(res);	
+	char s_expr[EXPR_LEN];
+	fgets(s_expr, EXPR_LEN, stdin);
+	EvalRes res = eval(s_expr);
+	p_evalres(res);	
 
-	 //Проверка разделения на токены
-	char *tmp = "+";
+	//Проверка разделения на токены
+/*	char *tmp = "+";
 	char *ptr = tmp;
 
 	Token tok;
@@ -190,6 +213,6 @@ int main() {
 		if (tok.st == InvalidToken)
 			break;
 	}
-	
+*/	
 	return 0;
 }

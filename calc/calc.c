@@ -112,12 +112,16 @@ int split(const Token *tok, int i, int n, bool (*splitter)(Token)) {
 
 EvalRes expr(const Token *tok, int i, int n) {
 	int j;
-
+	//printf("Expr ");p_token(*tok);
 	// пропускаем унарные минусы мимо
+	int minus_cnt = 0;
 	for (j = i; j < n; ++j) {
 		if (tok[j].t != MINUS)
 			break;
+		++minus_cnt;
 	}
+	if (minus_cnt > 1) 
+		return everr(SyntaxError);
 
 	int op_index = split(tok, j, n, expr_splitter);  // индекс токена оператора ("+"/"-")
 
@@ -127,13 +131,28 @@ EvalRes expr(const Token *tok, int i, int n) {
 	EvalRes _term = term(tok, i, op_index), 
 					_expr = expr(tok, op_index + 1, n);
 	if (tok[op_index].t == PLUS) 
-		return add_res(_term, _expr);
-	else 
-		return sub_res(_term, _expr);
+		return add_res(_term, expr(tok, op_index + 1, n));
+	else {
+		return add_res(_term, expr(tok, op_index, n));
+	}
+}
+
+int pow(int a, int x) {
+	if (x == 0)
+		return 1;
+	else
+		return a * pow(a, x - 1);
+}
+
+int pow_(int a, int x, int acc) {
+	if (x == 0)
+		return acc;
+	else
+		return pow_(a, x - 1, acc * a);
 }
 
 EvalRes term(const Token *tok, int i, int n) {
-	// printf("Term :: ");p_token(*tok);
+	//printf("Term ");p_token(*tok);
 	int op_index = split(tok, i, n, term_splitter);
 
 	if (op_index == n) 
@@ -148,6 +167,7 @@ EvalRes term(const Token *tok, int i, int n) {
 }
 
 EvalRes prim(const Token *tok, int i, int n) {
+	//printf("Prim ");p_token(*tok);
 	if (tok[i].t == MINUS) 
 		return neg_res(prim(tok, i + 1, n));
 

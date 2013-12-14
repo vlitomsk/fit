@@ -4,7 +4,7 @@
 #include <stdio.h>
 
 typedef enum {false, true} bool;
-typedef int Number;
+typedef double Number;
 
 extern inline Number parse_number(const char *s);
 extern void number_to_str(Number n, char *s, int sz);

@@ -5,11 +5,11 @@ inline Number parse_number(const char *s) {
 }
 
 void number_to_str(Number n, char *s, int sz) {
-	snprintf(s, sz, "%d", n);
+	snprintf(s, sz, "%d", (int)floor(n));
 }
 
 void p_number(Number n) {
-	printf("%d", n);
+	printf("%d", (int)floor(n));
 }
 
 bool status_ok(Status s) {
@@ -46,7 +46,6 @@ inline EvalRes number_mul(Number a, Number b) {
 }
 
 inline EvalRes number_div(Number a, Number b) {
-	puts("division");
 	if (b == 0)
 		return everr(DivByZero);
 	return evdone(a / b);

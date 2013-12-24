@@ -7,8 +7,10 @@ import System.Environment
 -- Einfo - edge info
 -- wlast - символ, который добавляется в конец слова
 -- cnt - количество повторений слова, заканчивающегося на данном "терме"
-data Einfo = Einfo { sym::Char, cnt::Int } deriving (Eq, Show)
+data Einfo = Einfo { sym::Char, _cnt::Int } deriving (Eq, Show)
 data Trie = Node [(Trie, Einfo)] deriving (Eq, Show)
+
+tmap :: ([(Trie, Einfo)] -> [(Trie, Einfo)]) -> Trie -> Trie
 tmap f (Node lst) = Node (f lst) -- "trie map"
 
 incEinfo :: Einfo -> Einfo
@@ -25,32 +27,30 @@ addToTrie :: String -> Trie -> Trie
 addToTrie (ch:xs) tr@(Node edges) = 
 	-- n' - Maybe Int, индекс ребра, на котором буква ch
 	let n' = findIndex (\(_, e) -> ch == sym e) edges 
-	in case n' of
+	in case n' of 
 		Just n ->
 			-- если в ch последний символ строки, тогда обновляем n-ое ребро
-			if (null xs) then tmap (replaceAt n (child, incEinfo einfo)) tr
+			if null xs then tmap (replaceAt n (child, incEinfo einfo)) tr
 			else tmap (replaceAt n (addToTrie xs child, einfo)) tr
-			where (child, einfo@(Einfo t_ch t_cnt)) = edges !! n
+			where (child, einfo) = edges !! n
 		Nothing -> 
 			tmap ((addToTrie xs (Node []), Einfo ch initcnt):) tr
-			where initcnt = if (null xs) then 1 else 0
+			where initcnt = if null xs then 1 else 0
 addToTrie [] x = x
-
-tradd s = addToTrie (s)
 
 traverse' :: String -> Trie -> IO ()
 traverse' s (Node xs) = do 
-	mapM f xs
+	mapM_ f xs
 	return ()
-	where f (child, Einfo sym cnt) = do
-		when (cnt /= 0) $ putStrLn $ reverse (sym:s) ++ " " ++ (show cnt)
-		traverse' (sym:s) child
+	where f (child, Einfo symbol count) = do
+		when (count /= 0) $ putStrLn $ reverse (symbol:s) ++ " " ++ show count
+		traverse' (symbol:s) child
 		
 traverse :: Trie -> IO ()
 traverse  = traverse' []
  
 chTrimmable :: Char -> Bool
-chTrimmable c = any (==c)".,?!- \"\';:()"
+chTrimmable c = c `elem` ".,?!- \"\';:()"
 
 trim :: String -> String
 trim [] = []
@@ -59,19 +59,19 @@ trim s
 	| chTrimmable (last s) = trim $ init s
 	| otherwise = s
 	
+downcase :: String -> String
 downcase = map toLower
 
 main :: IO ()
 main = do
 	args <- getArgs
-	handle <- openFile (args !! 0) ReadMode
+	handle <- openFile (head args) ReadMode
 	--handle <- openFile "vm" ReadMode
 	trie <- iter handle (Node [])
 	traverse trie
 	where iter hdl tracc = do
-		isEOF <- hIsEOF hdl
-		if (isEOF) then return tracc
+		eof <- hIsEOF hdl
+		if eof then return tracc
 		else do
 			line <- hGetLine hdl
-			--putStrLn line
 			iter hdl $ foldl' (flip addToTrie) tracc $ map (trim . downcase) $ words line

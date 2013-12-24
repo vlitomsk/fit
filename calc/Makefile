@@ -1,8 +1,8 @@
 all: compile run
 
 #CC = gcc
-#CC = i686-w64-mingw32-gcc
-CC = gcc -O2
+CC = i686-w64-mingw32-gcc -O2
+#CC = gcc -O2 -g
 
 clean:
 	rm -f ./*.o
@@ -15,7 +15,7 @@ compile: clean
 	$(CC) ./*.o -o main.exe -lm
 
 run: clean compile
-	./main.exe 
+	./main.exe < in.txt
 	
 test: compile
 	./testLab4.exe main.exe

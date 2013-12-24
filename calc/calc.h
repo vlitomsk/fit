@@ -5,6 +5,6 @@
 
 #define MAX_TOKENS 1024
 
-extern EvalRes eval(const char*);
+extern inline EvalRes eval(const char*);
 
 #endif

@@ -18,9 +18,9 @@ bool status_ok(Status s) {
 
 void p_evalres(EvalRes r) {
 	if (r.st == SyntaxError || r.st == InvalidToken)
-		printf("syntax error\n");
+		puts("syntax error");
 	else if (r.st == DivByZero)
-		printf("division by zero\n");
+		puts("division by zero");
 	else
 		p_number(r.res); 
 }

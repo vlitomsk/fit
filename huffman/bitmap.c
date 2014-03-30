@@ -29,14 +29,6 @@ u64 bitmapSize(Bitmap *b) {
 	return sz;
 }
 
-inline u8 setBit(u8 a, u8 bit_no, u8 val) {
-	return (val ? a | (1 << bit_no) : a & ~(1 << bit_no));
-}
-
-inline u8 getBit(u8 a, u8 bit_no) {
-	return (a >> bit_no) & 1;
-}
-
 Bitmap* writeBit(u8 bit, Bitmap *b) {
 	while (b->next) 
 		b = b->next;
@@ -66,6 +58,15 @@ Bitmap* writeByte(u8 byte, Bitmap *b) {
 	int i;
 	for (i = 0; i < 8; ++i)
 		writeBit((byte >> i), b);
+	return b;
+}
+
+Bitmap* writeDWord(u32 dword, Bitmap *b) {
+	writeByte(dword & 0xff, b);
+	writeByte((dword >> 8) & 0xff, b);
+	writeByte((dword >> 16) & 0xff, b);
+	writeByte((dword >> 24) & 0xff, b);
+
 	return b;
 }
 
@@ -122,6 +123,15 @@ u8 readByte(Bitmap *b, int *error) {
 	return result;
 }
 
+u32 readDWord(Bitmap *b, int *error) {
+	u32 dw = readByte(b, error);
+	dw |= (u32)readByte(b, error) << 8;
+	dw |= (u32)readByte(b, error) << 16;
+	dw |= (u32)readByte(b, error) << 24;
+
+	return dw;
+}
+
 inline int min(int a, int b) {
 	return (a < b ? a : b);
 }
@@ -135,7 +145,6 @@ void sprintBitmap(Bitmap *b) {
 			for (j = 0; j < min(8, b->bits_used - i * 8); ++j) {
 				printf("%d", (b->buf[i] >> j) & 1);
 			}
-			//printf(" ");
 		}
 		total_bits += b->bits_used;
 		if (!b->next)
@@ -146,3 +155,92 @@ void sprintBitmap(Bitmap *b) {
 	}
 	printf("\nTotal bits used: %d\n", total_bits);
 }
+
+BRWState* initBRWS(void) {
+	BRWState *bws = calloc(1, sizeof(BRWState));
+	return bws;
+}
+
+/* bws -- bit write state. tut mozhet hranitsa nezapisanniy ostatok */
+/* pri pervom vizove funkcii bws = 0 */
+void writeBitThr(u8 bit, BRWState *bws, FILE *out) {
+	bws->x |= (bit & 1) << bws->len;
+	if (bws->len == 7) {
+		fputc(bws->x, out);
+		bws->len = bws->x = 0;
+	} else {
+		(bws->len)++;
+	}
+}
+
+void writeByteThr(u8 byte, BRWState *bws, FILE *out) {
+/*	11111111 | 00000001
+	                 ^^ len = 2   
+	  byte         x
+
+	 пишем последовательность : (ост. 6 младших бит byte) 01
+	 bws.x = ост.2 старших бита*/
+	 
+	 fputc(((1 << bws->len) - 1) & bws->x | (byte << bws->len), out);
+	 bws->x = byte >> (8 - bws->len);
+}
+
+void writeDWordThr(u32 dword, BRWState *bws, FILE *out) {
+	writeByteThr(dword & 0xff, bws, out);
+	writeByteThr((dword >> 8) & 0xff, bws, out);
+	writeByteThr((dword >> 16) & 0xff, bws, out);
+	writeByteThr((dword >> 24) & 0xff, bws, out);
+}
+
+void writeDDWordThr(u64 ddword, BRWState *bws, FILE *out) {
+	writeDWordThr(ddword & 0xffffffff, bws, out);
+	writeDWordThr((ddword >> 32) & 0xffffffff, bws, out);
+}
+
+// write byte from bws to out
+// aligns next write to u8 size
+void flushBitWriter(BRWState *bws, FILE *out) {
+	fputc(bws->x, out);
+	fflush(out);
+	bws->x = bws->len = 0;
+}
+
+u8 readBitThr(BRWState *brs, FILE *in, int *ok) {
+	*ok = 1;
+	if (brs->len == 0) {
+		*ok = fread(&(brs->x), sizeof(u8), 1, in);
+		brs->len = 8;
+	}
+	u8 res = brs->x & 1;
+	(brs->len)--;
+	brs->x >>= 1;
+	return res;
+}
+
+u8 readByteThr(BRWState *brs, FILE *in, int *ok) {
+	u8 ch;
+	*ok = fread(&ch, sizeof(u8), 1, in);
+	if (brs->len != 0) {
+		u8 res = brs->x & ((1 << brs->len) - 1) | (ch << brs->len);
+		brs->x = ch >> (8 - brs->len);
+		return res;
+	} else
+		return ch;
+}
+
+u32 readDWordThr(BRWState *brs, FILE *in, int *ok) {
+	u32 a, b, c, d;
+	a = readByteThr(brs, in, ok);	
+	b = readByteThr(brs, in, ok);
+	c = readByteThr(brs, in, ok);
+	d = readByteThr(brs, in, ok);
+	return a | (b << 8) | (c << 16) | (d << 24);
+}
+
+u64 readDDWordThr(BRWState *brs, FILE *in, int *ok) {
+	u64 dw1, dw2;
+	dw1 = readDWordThr(brs, in, ok);
+	dw2 = readDWordThr(brs, in, ok);
+	return dw1 | (dw2 << 32);
+}
+

@@ -4,17 +4,21 @@
 #include "huffman.h"
 #include "bitmap.h"
 
-void passNewline() {
-	while (getchar() != '\n')
-		return;
+void passNewline(FILE *f) {
+	int ch = fgetc(f);
+	if (ch == '\r')
+		fgetc(f);
 }
 
-int main(int argc, char **argv) {
+int main(int argc, char **argv) {	
+	freopen("in.txt", "rb", stdin);
+	freopen("out.txt", "wb", stdout);
+	
 	if (getchar() == 'c') { // Compress
-		passNewline();
+		passNewline(stdin);
 		huffmanEncode(stdin, stdout);
 	} else { // Decompress
-		passNewline();
+		passNewline(stdin);
 		huffmanDecode(stdin, stdout);
 	}
 

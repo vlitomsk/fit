@@ -1,12 +1,12 @@
 all: compile run
 
-#CC = gcc
-#CC = i686-w64-mingw32-gcc
 CC = gcc
+#CC = i686-w64-mingw32-gcc
+#CC = i586-mingw32msvc-gcc
 
 clean:
-	rm -f ./*.o
-	rm -f ./main.exe
+	del *.o
+	del main.exe
 
 compile: clean
 	$(CC) -g -c -O2 ./huffman.c -o huffman.o
@@ -15,7 +15,9 @@ compile: clean
 	$(CC) -g -O2 ./*.o -o main.exe -lm
 
 run: clean compile
-	./main.exe < in > out
+	copy zero counter
+	main.exe < in.txt
 	
 test: compile
-	./tester.exe main.exe
+	copy zero counter
+	tester.exe main.exe

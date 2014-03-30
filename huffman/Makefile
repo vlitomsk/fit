@@ -15,9 +15,7 @@ compile: clean
 	$(CC) -g -O2 ./*.o -o main.exe -lm
 
 run: clean compile
-	copy zero counter
 	main.exe < in.txt
 	
 test: compile
-	copy zero counter
 	tester.exe main.exe

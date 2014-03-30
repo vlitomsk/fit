@@ -6,7 +6,7 @@ int height(const Node *p) {
 	return p ? p->h : 0; 
 }
 
-unsigned balanceFactor(const Node *p) {
+int balanceFactor(const Node *p) {
 	return height(p->r) - height(p->l);
 }
 
@@ -26,6 +26,7 @@ Node *singleNode(int key) {
 	Node *p = (Node*)calloc(1, sizeof(Node));
 	assert(p);
 	p->key = key;
+	p->h = 1;
 	return p;
 }
 
@@ -59,6 +60,7 @@ Node *rotRight(Node *p) {
 
 Node *balance(Node *p) {
 	fixHeight(p);
+
 	if (balanceFactor(p) == 2) { // правая штанина тяжелее
 		if (balanceFactor(p->r) < 0) { // правая левая часть тяжелее, длинный поворот
 			p->r = rotRight(p->r);
@@ -75,15 +77,28 @@ Node *balance(Node *p) {
 }
 
 Node *insert(Node *p, int key) {
-	if (!p)
+	if (!p) {
 		return singleNode(key);
+	}
 		
-	if (key < p->key)
+	if (key < p->key) {
 		p->l = insert(p->l, key);
-	else
+	} else {
 		p->r = insert(p->r, key);
+	}
+	
+	Node *res = balance(p);
+	
+	return res;
+}
+
+void dfs(Node *p) {
+	if (!p)
+		return;
 		
-	return balance(p);
+	printf("[%p] Height: %d; Key: %d, BF: %d, L: %p, R: %p\n", p, p->h, p->key, balanceFactor(p), p->l, p->r);
+	dfs(p->l);
+	dfs(p->r);
 }
 
 void freeTree(Node *p) {

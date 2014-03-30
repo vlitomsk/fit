@@ -12,5 +12,6 @@ typedef enum {false, true} bool;
 extern int height(const Node *p);
 extern Node *insert(Node *p, int key);
 extern void freeTree(Node *p);
+extern void dfs(Node *p);
 
 #endif

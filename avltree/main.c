@@ -9,8 +9,9 @@ int main(int argc, char **argv) {
 		scanf("%d", &val);
 		tree = insert(tree, val);
 	}
-	printf("%d\n", tree ? height(tree)+1 : 0);
-	freeTree(tree);
+	printf("%d\n", tree ? height(tree) : 0);
+
+//	freeTree(tree);
 	
 	return 0;
 }

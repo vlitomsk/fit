@@ -11,7 +11,7 @@ clean:
 compile: clean
 	$(CC) -g -c -O2 ./avltree.c -o avltree.o
 	$(CC) -g -c -O2 ./main.c -o main.o
-	$(CC) -g -O2 ./*.o -o main.exe -lm
+	$(CC) -g -O2 main.o avltree.o -o main.exe -lm
 
 run: clean compile
 	main.exe < in.txt

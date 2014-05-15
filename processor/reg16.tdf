@@ -1,0 +1,15 @@
+SUBDESIGN reg16
+(
+	d[15..0] : INPUT;
+	reset, clk : INPUT;
+	q[15..0] : OUTPUT;
+)
+
+VARIABLE
+	r[15..0] : DFF;
+
+BEGIN
+	r[].(clrn, clk) = (reset, clk);
+	r[].d = d[];
+	q[] = r[].q;
+END;

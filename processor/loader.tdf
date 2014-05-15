@@ -1,0 +1,65 @@
+INCLUDE "reg16.inc";
+INCLUDE "lpm_rom.inc";
+INCLUDE "reg8.inc";
+INCLUDE "reg9.inc";
+
+SUBDESIGN loader
+(
+	clk, reset,fst : INPUT;
+	ready, q[15..0], ipq[8..0] : OUTPUT;
+)
+
+VARIABLE
+	fsm :	MACHINE
+			WITH STATES (init, st0, st1, st2, st3, st4, st_ip0, st_ip1, st_ip2);
+
+	rom : lpm_rom -- В ПЗУ находится программа
+		  WITH (LPM_WIDTH = 8, LPM_WIDTHAD = 9, LPM_FILE = "fib.hex", 
+                LPM_ADDRESS_CONTROL = "UNREGISTERED", LPM_OUTDATA = "UNREGISTERED");
+
+	ir : reg16;
+	ip : reg9;
+	rdy : DFF;
+BEGIN
+
+(fsm, rdy, ir, ip).clk = clk;
+(ir, ip).reset = reset;
+fsm.reset = !reset;
+rdy.clrn = reset;
+
+q[] = ir.q[];
+ipq[] = ip.q[];
+ready = rdy.q;
+
+IF (ready == GND) THEN
+	IF (fsm != init) THEN
+		ip.d[] = ip.q[] + 2;
+	ELSE -- initialization here
+		ip.d[] = 0;
+		fsm = st0;
+	END IF;
+	rdy.d = VCC;
+ELSE
+	ip.d[] = ip.q[];
+	CASE fsm IS
+		WHEN st0 =>
+			rom.address[] = ip.q[];
+			ir.d[15..8] = rom.q[];
+			fsm = st1;
+			rdy.d = VCC;
+		WHEN st1 => -- в состоянии st1 загружен старший байт IR
+			rom.address[] = ip.q[] + 1;
+			ir.d[7..0] = rom.q[];
+			ir.d[15..8] = ir.q[15..8]; -- не забываем отключить регистр от памяти		
+			rdy.d = VCC;
+			fsm = st2; 
+		WHEN st2 => -- в состоянии st2 загружен младший байт IR
+			ir.d[] = ir.q[];
+			rdy.d = GND;
+			fsm = st0;
+	END CASE;
+END IF;
+		
+END;
+
+

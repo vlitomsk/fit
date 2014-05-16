@@ -13,7 +13,7 @@ CONSTANT OP_JZ	= 6;
 CONSTANT OP_MOV = 7; --
 CONSTANT OP_TEST = 8;
 CONSTANT OP_MOVR = 9; --
-CONSTANT OP_STOP = 10;
+CONSTANT OP_STOP = 10; --
 CONSTANT OP_LD = 11;
 
 SUBDESIGN loader
@@ -60,7 +60,7 @@ VARIABLE
 				= 2 => к регистру arg_r2[] подключены ноды r2_d[], r2_q[]
 	%
 	gpr_mux[1..0] : NODE;
-	
+	jmp_flag : NODE;
 BEGIN
 
 (fsm, rdy, ir, ip, gpr[]).clk = clk;
@@ -160,7 +160,17 @@ ELSIF (ready == GND) AND (fsm != init) THEN
 		IF fsm == st0 THEN
 			fsm = st_idle;
 		END IF;
+	WHEN OP_JMP =>
+		IF fsm == st0 THEN
+			ip.d[] = arg_ad[];
+			jmp_flag = VCC;
+			fsm = st_ip;
+		END IF;
 	END CASE;
+
+	IF opcode[] != OP_JMP AND opcode[] != OP_JZ THEN
+		jmp_flag = GND;
+	END IF;	
 
 	%
 	Наращивание IP и установка флага ready происходят только в 
@@ -171,11 +181,17 @@ ELSIF (ready == GND) AND (fsm != init) THEN
 		ip.d[] = ip.q[];
 	ELSIF fsm == st_ip THEN
 		gpr_mux[] = 0; 
-		ip.d[] = ip.q[] + 2;
+		IF opcode[] != OP_JMP AND opcode[] != OP_JZ THEN
+			ip.d[] = ip.q[] + 2;
+		ELSE
+			ip.d[] = ip.q[];
+		END IF;
 		fsm = st0;
 		rdy.d = VCC;
 	ELSE
-		ip.d[] = ip.q[];
+		IF opcode[] != OP_JMP AND opcode[] != OP_JZ THEN
+			ip.d[] = ip.q[];
+		END IF;
 		rdy.d = GND;
 	END IF;
 ELSIF (ready == VCC) THEN

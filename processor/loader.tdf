@@ -3,16 +3,16 @@ INCLUDE "lpm_rom.inc";
 INCLUDE "reg8.inc";
 INCLUDE "reg9.inc";
 
-CONSTANT OP_NOP = 0;
-CONSTANT OP_ADD = 1;
-CONSTANT OP_SUB = 2;
-CONSTANT OP_INC = 3;
-CONSTANT OP_DEC = 4;
+CONSTANT OP_NOP = 0; --
+CONSTANT OP_ADD = 1; --
+CONSTANT OP_SUB = 2; --
+CONSTANT OP_INC = 3; --
+CONSTANT OP_DEC = 4; --
 CONSTANT OP_JMP = 5;
 CONSTANT OP_JZ	= 6;
-CONSTANT OP_MOV = 7;
+CONSTANT OP_MOV = 7; --
 CONSTANT OP_TEST = 8;
-CONSTANT OP_MOVR = 9;
+CONSTANT OP_MOVR = 9; --
 CONSTANT OP_STOP = 10;
 CONSTANT OP_LD = 11;
 
@@ -68,6 +68,7 @@ BEGIN
 fsm.reset = !reset;
 rdy.clrn = reset;
 
+-- Подключение выходов микросхемы
 irq[] = ir.q[];
 ipq[] = ip.q[];
 (raq[], rbq[], rcq[], rdq[]) = (gpr0, gpr1, gpr2, gpr3).q[];
@@ -117,17 +118,45 @@ ELSIF (ready == GND) AND (fsm != init) THEN
 			r1_d[] = arg_im[];
 			fsm = st_ip;
 		END IF;
-	END CASE;
-	
-%
-	CASE fsm IS
-		WHEN st0 =>
+	WHEN OP_MOVR =>
+		IF fsm == st0 THEN
+			gpr_mux[] = 2;
+			r1_d[] = r2_q[];
+			r2_d[] = r2_q[];
 			fsm = st_ip;
-			gpr0.d[] = gpr0.q[] + 1;
-		WHEN OTHERS =>
-			gpr0.d[] = gpr0.q[];
+		END IF;
+	WHEN OP_NOP =>
+		IF fsm == st0 THEN
+			gpr_mux[] = 0;
+			fsm = st_ip;
+		END IF;
+	WHEN OP_ADD =>
+		IF fsm == st0 THEN
+			gpr_mux[] = 2;
+			r1_d[] = r1_q[] + r2_q[];
+			r2_d[] = r2_q[];
+			fsm = st_ip;
+		END IF;
+	WHEN OP_SUB =>
+		IF fsm == st0 THEN
+			gpr_mux[] = 2;
+			r1_d[] = r1_q[] - r2_q[];
+			r2_d[] = r2_q[];
+			fsm = st_ip;
+		END IF;
+	WHEN OP_INC =>
+		IF fsm == st0 THEN
+			gpr_mux[] = 1;
+			r1_d[] = r1_q[] + 1;
+			fsm = st_ip;
+		END IF;
+	WHEN OP_DEC =>
+		IF fsm == st0 THEN
+			gpr_mux[] = 1;
+			r1_d[] = r1_q[] - 1;
+			fsm = st_ip;
+		END IF;
 	END CASE;
-%
 
 	%
 	Наращивание IP и установка флага ready происходят только в 

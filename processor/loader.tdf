@@ -187,6 +187,13 @@ ELSIF (ready == GND) AND (fsm != init) THEN
 			END IF;
 			fsm = st_ip;
 		END IF;
+	WHEN OP_LD =>
+		IF fsm == st0 THEN
+			gpr_mux[] = 1;
+			rom.address[] = arg_ad[];
+			r1_d[] = rom.q[];
+			fsm = st_ip;
+		END IF;
 	END CASE;
 
 	% Управление изменением IP %

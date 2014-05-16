@@ -3,44 +3,150 @@ INCLUDE "lpm_rom.inc";
 INCLUDE "reg8.inc";
 INCLUDE "reg9.inc";
 
+CONSTANT OP_NOP = 0;
+CONSTANT OP_ADD = 1;
+CONSTANT OP_SUB = 2;
+CONSTANT OP_INC = 3;
+CONSTANT OP_DEC = 4;
+CONSTANT OP_JMP = 5;
+CONSTANT OP_JZ	= 6;
+CONSTANT OP_MOV = 7;
+CONSTANT OP_TEST = 8;
+CONSTANT OP_MOVR = 9;
+CONSTANT OP_STOP = 10;
+CONSTANT OP_LD = 11;
+
 SUBDESIGN loader
 (
-	clk, reset,fst : INPUT;
-	ready, q[15..0], ipq[8..0] : OUTPUT;
+	clk, reset : INPUT;
+	ready, irq[15..0], ipq[8..0], raq[7..0], rbq[7..0], rcq[7..0], rdq[7..0] : OUTPUT;
 )
+
+%
+	reset:	GND = сброс
+	ready:	выставляется, когда микропрограмма закончила работу и IP обновился
+%
 
 VARIABLE
 	fsm :	MACHINE
-			WITH STATES (init, st0, st1, st2, st3, st4, st_ip0, st_ip1, st_ip2);
+			WITH STATES (init, st0, st1, st2, st_ip);
 
 	rom : lpm_rom -- В ПЗУ находится программа
 		  WITH (LPM_WIDTH = 8, LPM_WIDTHAD = 9, LPM_FILE = "fib.hex", 
                 LPM_ADDRESS_CONTROL = "UNREGISTERED", LPM_OUTDATA = "UNREGISTERED");
 
-	ir : reg16;
-	ip : reg9;
-	rdy : DFF;
+	ir : reg16; -- Регистр инструкции
+	ip : reg9; -- Счетчик инструкций
+	gpr[7..0] : reg8; -- Регистры общего назначения
+	rdy : DFF; -- Флаг готовности к исполнению следующей инструкции
+
+	% Для удобного обращения к полям инструкции %
+	opcode[3..0] : NODE;
+	arg_r1[2..0] : NODE;
+	arg_r2[2..0] : NODE;
+	arg_im[7..0] : NODE;
+	arg_ad[8..0] : NODE;
+
+	% Входы D и выходы Q регистров arg_r1[], arg_r2[] %
+	% (gpr[arg_r1[]].d не работает, т.к. не константный индекс) %
+	r1_d[7..0] : NODE;
+	r2_d[7..0] : NODE;
+	r1_q[7..0] : NODE;
+	r2_q[7..0] : NODE;
+
+	%
+	gpr_mux[]	= 0 => выходы РОН подключены к входам РОН
+				= 1 => к регистру arg_r1[] подключены ноды r1_d[], r1_q[]
+				= 2 => к регистру arg_r2[] подключены ноды r2_d[], r2_q[]
+	%
+	gpr_mux[1..0] : NODE;
+	
 BEGIN
 
-(fsm, rdy, ir, ip).clk = clk;
-(ir, ip).reset = reset;
+(fsm, rdy, ir, ip, gpr[]).clk = clk;
+(ir, ip, gpr[]).reset = reset;
 fsm.reset = !reset;
 rdy.clrn = reset;
 
-q[] = ir.q[];
+irq[] = ir.q[];
 ipq[] = ip.q[];
+(raq[], rbq[], rcq[], rdq[]) = (gpr0, gpr1, gpr2, gpr3).q[];
 ready = rdy.q;
 
-IF (ready == GND) THEN
-	IF (fsm != init) THEN
-		ip.d[] = ip.q[] + 2;
-	ELSE -- initialization here
-		ip.d[] = 0;
-		fsm = st0;
+opcode[] = ir.q[15..12];
+arg_r1[] = ir.q[11..9];
+arg_r2[] = ir.q[7..5];
+arg_im[] = ir.q[7..0];
+arg_ad[] = ir.q[8..0];
+
+% Де- и мультиплексирование РОН %
+FOR i IN 0 to 3 GENERATE
+	IF i == arg_r1[] AND gpr_mux[] != 0 THEN
+		gpr[i].d[] = r1_d[];
+		r1_q[] = gpr[i].q[];
+		IF gpr_mux[] == 1 THEN
+			r2_d[] = r2_q[];
+		END;
+	ELSIF i == arg_r2[] AND gpr_mux[] == 2 THEN
+		gpr[i].d[] = r2_d[];
+		r2_q[] = gpr[i].q[];
+	ELSE
+		IF gpr_mux[] == 0 THEN
+			r1_d[] = r1_q[];
+			r2_d[] = r2_q[];
+		END IF;
+		gpr[i].d[] = gpr[i].q[];
 	END IF;
+END GENERATE;
+
+IF (ready == GND) AND (fsm == init) THEN
+	-- вся "инициализация" тут
+	ip.d[] = 0;
+	gpr[].d[] = 0;
+	fsm = st0;
 	rdy.d = VCC;
-ELSE
+ELSIF (ready == GND) AND (fsm != init) THEN
+	ir.d[] = ir.q[];
+
+	% Микропрограммы %
+	% После завершения каждой МП перейти в состояние st_ip %
+	CASE opcode[] IS
+	WHEN OP_MOV =>
+		IF fsm == st0 THEN
+			gpr_mux[] = 1;
+			r1_d[] = arg_im[];
+			fsm = st_ip;
+		END IF;
+	END CASE;
+	
+%
+	CASE fsm IS
+		WHEN st0 =>
+			fsm = st_ip;
+			gpr0.d[] = gpr0.q[] + 1;
+		WHEN OTHERS =>
+			gpr0.d[] = gpr0.q[];
+	END CASE;
+%
+
+	%
+	Наращивание IP и установка флага ready происходят только в 
+	специальном состоянии st_ip
+	%
+	IF fsm == st_ip THEN
+		gpr_mux[] = 0; 
+		ip.d[] = ip.q[] + 2;
+		fsm = st0;
+		rdy.d = VCC;
+	ELSE
+		ip.d[] = ip.q[];
+		rdy.d = GND;
+	END IF;
+ELSIF (ready == VCC) THEN
 	ip.d[] = ip.q[];
+	gpr[].d[] = gpr[].q[];
+
+	% Механизм загрузки инструкции в IR из памяти по адресу IP %
 	CASE fsm IS
 		WHEN st0 =>
 			rom.address[] = ip.q[];

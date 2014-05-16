@@ -29,7 +29,7 @@ SUBDESIGN loader
 
 VARIABLE
 	fsm :	MACHINE
-			WITH STATES (init, st0, st1, st2, st_ip);
+			WITH STATES (init, st0, st1, st2, st_ip, st_idle);
 
 	rom : lpm_rom -- В ПЗУ находится программа
 		  WITH (LPM_WIDTH = 8, LPM_WIDTHAD = 9, LPM_FILE = "fib.hex", 
@@ -156,13 +156,20 @@ ELSIF (ready == GND) AND (fsm != init) THEN
 			r1_d[] = r1_q[] - 1;
 			fsm = st_ip;
 		END IF;
+	WHEN OP_STOP =>
+		IF fsm == st0 THEN
+			fsm = st_idle;
+		END IF;
 	END CASE;
 
 	%
 	Наращивание IP и установка флага ready происходят только в 
 	специальном состоянии st_ip
 	%
-	IF fsm == st_ip THEN
+	IF fsm == st_idle THEN
+		rdy.d = VCC;
+		ip.d[] = ip.q[];
+	ELSIF fsm == st_ip THEN
 		gpr_mux[] = 0; 
 		ip.d[] = ip.q[] + 2;
 		fsm = st0;
@@ -175,6 +182,10 @@ ELSIF (ready == VCC) THEN
 	ip.d[] = ip.q[];
 	gpr[].d[] = gpr[].q[];
 
+	IF fsm == st_idle THEN
+		rdy.d = VCC;
+		ip.d[] = ip.q[];
+	END IF;
 	% Механизм загрузки инструкции в IR из памяти по адресу IP %
 	CASE fsm IS
 		WHEN st0 =>

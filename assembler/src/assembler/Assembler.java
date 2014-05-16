@@ -32,6 +32,7 @@ class Tag {
 
 class Arg {
 	public static final int T_RG = 1, T_IM = 2, T_LAB = 4, T_NO = 8;
+	public static final int T_AD = T_IM | T_LAB;
 	public int t;
 	public String v;
 	public Arg(int type, String v) {
@@ -76,20 +77,21 @@ class FineInstr {
 public class Assembler {
 	private HashMap<String, Tag> lex_trie;
 
-	private final int INSTR_COUNT = 11;
+	private final int INSTR_COUNT = 12;
 	private final int 
 		OP_NOP = 0,
 		OP_ADD = 1,
 		OP_SUB = 2,
 		OP_INC = 3,
 		OP_DEC = 4,
-		OP_CMP = 5,
-		OP_JMP = 6,
-		OP_JL = 7,
-		OP_JG = 8,
-		OP_JE = 9,
-		OP_MOV = 10;
-
+		OP_JMP = 5,
+		OP_JZ = 6,
+		OP_MOV = 7,
+		OP_TEST = 8,
+		OP_MOVR = 9,
+		OP_STOP = 10,
+		OP_LD = 11;
+	
 	private final int
 		RG_A = 0,
 		RG_B = 1,
@@ -108,13 +110,13 @@ public class Assembler {
 		lex_trie.put("ADD", new Tag(Tag.T_OPCODE, OP_ADD));
 		lex_trie.put("INC",new Tag(Tag.T_OPCODE, OP_INC));
 		lex_trie.put("DEC",new Tag(Tag.T_OPCODE, OP_DEC));
-		lex_trie.put("CMP",new Tag(Tag.T_OPCODE, OP_CMP));
 		lex_trie.put("JMP",new Tag(Tag.T_OPCODE, OP_JMP));
-		lex_trie.put("JL", new Tag(Tag.T_OPCODE, OP_JL));
-		lex_trie.put("JG", new Tag(Tag.T_OPCODE, OP_JG));
-		lex_trie.put("JE", new Tag(Tag.T_OPCODE, OP_JE));
 		lex_trie.put("MOV",new Tag(Tag.T_OPCODE, OP_MOV));
-		
+		lex_trie.put("JZ", new Tag(Tag.T_OPCODE, OP_JZ));
+		lex_trie.put("TEST", new Tag(Tag.T_OPCODE, OP_TEST));
+		lex_trie.put("MOVR", new Tag(Tag.T_OPCODE, OP_MOVR));
+		lex_trie.put("STOP", new Tag(Tag.T_OPCODE, OP_STOP));
+		lex_trie.put("LD", new Tag(Tag.T_OPCODE, OP_LD));
 		lex_trie.put("RA", new Tag(Tag.T_REG, RG_A));
 		lex_trie.put("RB", new Tag(Tag.T_REG, RG_B));
 		lex_trie.put("RC", new Tag(Tag.T_REG, RG_C));
@@ -143,23 +145,26 @@ public class Assembler {
 		asmFunctions[OP_DEC] = assembleReg.apply(OP_DEC);
 		argTypes[OP_DEC] = new int[]{Arg.T_RG, Arg.T_NO};
 		
-		asmFunctions[OP_CMP] = assembleRegReg.apply(OP_CMP);
-		argTypes[OP_CMP] = new int[]{Arg.T_RG, Arg.T_RG};
-		
 		asmFunctions[OP_JMP] = assembleAddr.apply(OP_JMP);
-		argTypes[OP_JMP] = new int[]{Arg.T_IM | Arg.T_LAB, Arg.T_NO};
+		argTypes[OP_JMP] = new int[]{Arg.T_AD, Arg.T_NO};
 		
-		asmFunctions[OP_JL] = assembleAddr.apply(OP_JL);
-		argTypes[OP_JL] = new int[]{Arg.T_IM | Arg.T_LAB, Arg.T_NO};
-		
-		asmFunctions[OP_JG] = assembleAddr.apply(OP_JG);
-		argTypes[OP_JG] = new int[]{Arg.T_IM | Arg.T_LAB, Arg.T_NO};
-		
-		asmFunctions[OP_JE] = assembleAddr.apply(OP_JE);
-		argTypes[OP_JE] = new int[]{Arg.T_IM | Arg.T_LAB, Arg.T_NO};
+		asmFunctions[OP_JZ] = assembleAddr.apply(OP_JZ);
+		argTypes[OP_JZ] = new int[]{Arg.T_AD, Arg.T_NO};
 		
 		asmFunctions[OP_MOV] = assembleRegImmed.apply(OP_MOV);
 		argTypes[OP_MOV] = new int[]{Arg.T_RG, Arg.T_IM};
+
+		asmFunctions[OP_TEST] = assembleReg.apply(OP_TEST);
+		argTypes[OP_TEST] = new int[]{Arg.T_RG, Arg.T_NO};
+		
+		asmFunctions[OP_MOVR] = assembleRegReg.apply(OP_MOVR);
+		argTypes[OP_MOVR] = new int[]{Arg.T_RG, Arg.T_RG};
+		
+		asmFunctions[OP_STOP] = assembleNoArg.apply(OP_STOP);
+		argTypes[OP_STOP] = new int[]{Arg.T_NO, Arg.T_NO};
+		
+		asmFunctions[OP_LD] = assembleRegAddr.apply(OP_LD);
+		argTypes[OP_LD] = new int[]{Arg.T_RG, Arg.T_AD};
 	}
 	
 	private ArrayList<String> readLines(String in_f) throws IOException {
@@ -475,11 +480,10 @@ public class Assembler {
 	}
 	
 	private void writeBytecode(int[] bytecode, String out_f) throws IOException {
-		FileOutputStream fos = new FileOutputStream(new File(out_f));
-		for (int i = 0; i < bytecode.length; ++i) {
-			fos.write((char)bytecode[i]);
-		}
-		fos.close();
+		BufferedWriter bw = new BufferedWriter(new FileWriter(out_f));
+		String s = HexOut.mkHex(bytecode);
+		bw.write(s);
+		bw.close();
 	}
 
 	public int assemble(String in_f, String out_f) 

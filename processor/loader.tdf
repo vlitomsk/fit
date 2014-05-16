@@ -8,7 +8,7 @@ CONSTANT OP_ADD = 1; --
 CONSTANT OP_SUB = 2; --
 CONSTANT OP_INC = 3; --
 CONSTANT OP_DEC = 4; --
-CONSTANT OP_JMP = 5;
+CONSTANT OP_JMP = 5; --
 CONSTANT OP_JZ	= 6;
 CONSTANT OP_MOV = 7; --
 CONSTANT OP_TEST = 8;
@@ -19,7 +19,7 @@ CONSTANT OP_LD = 11;
 SUBDESIGN loader
 (
 	clk, reset : INPUT;
-	ready, irq[15..0], ipq[8..0], raq[7..0], rbq[7..0], rcq[7..0], rdq[7..0] : OUTPUT;
+	ready, irq[15..0], ipq[8..0], raq[7..0], rbq[7..0], rcq[7..0], rdq[7..0], zf : OUTPUT;
 )
 
 %
@@ -39,6 +39,7 @@ VARIABLE
 	ip : reg9; -- Счетчик инструкций
 	gpr[7..0] : reg8; -- Регистры общего назначения
 	rdy : DFF; -- Флаг готовности к исполнению следующей инструкции
+	zero_flag : DFF; -- Выставляется инструкцией TEST, используется в JZ
 
 	% Для удобного обращения к полям инструкции %
 	opcode[3..0] : NODE;
@@ -60,19 +61,19 @@ VARIABLE
 				= 2 => к регистру arg_r2[] подключены ноды r2_d[], r2_q[]
 	%
 	gpr_mux[1..0] : NODE;
-	jmp_flag : NODE;
 BEGIN
 
-(fsm, rdy, ir, ip, gpr[]).clk = clk;
+(fsm, rdy, ir, ip, gpr[], zero_flag).clk = clk;
 (ir, ip, gpr[]).reset = reset;
 fsm.reset = !reset;
-rdy.clrn = reset;
+(rdy, zero_flag).clrn = reset;
 
 -- Подключение выходов микросхемы
 irq[] = ir.q[];
 ipq[] = ip.q[];
 (raq[], rbq[], rcq[], rdq[]) = (gpr0, gpr1, gpr2, gpr3).q[];
 ready = rdy.q;
+zf = zero_flag.q;
 
 opcode[] = ir.q[15..12];
 arg_r1[] = ir.q[11..9];
@@ -87,7 +88,7 @@ FOR i IN 0 to 3 GENERATE
 		r1_q[] = gpr[i].q[];
 		IF gpr_mux[] == 1 THEN
 			r2_d[] = r2_q[];
-		END;
+		END IF;
 	ELSIF i == arg_r2[] AND gpr_mux[] == 2 THEN
 		gpr[i].d[] = r2_d[];
 		r2_q[] = gpr[i].q[];
@@ -163,40 +164,66 @@ ELSIF (ready == GND) AND (fsm != init) THEN
 	WHEN OP_JMP =>
 		IF fsm == st0 THEN
 			ip.d[] = arg_ad[];
-			jmp_flag = VCC;
+			fsm = st_ip;
+		END IF;
+	WHEN OP_TEST =>
+		IF fsm == st0 THEN
+			gpr_mux[] = 1;
+			r1_d[] = r1_q[];
+			IF r1_q[] == 0 THEN
+				zero_flag.d = VCC;
+			ELSE
+				zero_flag.d = GND;
+			END IF;
+			fsm = st_ip;
+
+		END IF;
+	WHEN OP_JZ =>
+		IF fsm == st0 THEN
+			IF (zero_flag.q == VCC) THEN
+				ip.d[] = arg_ad[];
+			ELSE
+				ip.d[] = ip.q[] + 2;
+			END IF;
 			fsm = st_ip;
 		END IF;
 	END CASE;
 
-	IF opcode[] != OP_JMP AND opcode[] != OP_JZ THEN
-		jmp_flag = GND;
-	END IF;	
-
-	%
-	Наращивание IP и установка флага ready происходят только в 
-	специальном состоянии st_ip
-	%
+	% Управление изменением IP %
 	IF fsm == st_idle THEN
-		rdy.d = VCC;
 		ip.d[] = ip.q[];
 	ELSIF fsm == st_ip THEN
-		gpr_mux[] = 0; 
 		IF opcode[] != OP_JMP AND opcode[] != OP_JZ THEN
 			ip.d[] = ip.q[] + 2;
 		ELSE
 			ip.d[] = ip.q[];
 		END IF;
-		fsm = st0;
-		rdy.d = VCC;
 	ELSE
 		IF opcode[] != OP_JMP AND opcode[] != OP_JZ THEN
 			ip.d[] = ip.q[];
 		END IF;
+	END IF;
+
+	% Управление внутренними флагами %
+	IF opcode[] != OP_TEST THEN
+		zero_flag.d = zero_flag.q;
+	END IF;
+
+	IF fsm == st_idle THEN
+		rdy.d = VCC;
+	ELSIF fsm == st_ip THEN
+		gpr_mux[] = 0; 
+		fsm = st0;
+		zero_flag.d = zero_flag.q;
+		rdy.d = VCC;
+	ELSE
 		rdy.d = GND;
 	END IF;
+
 ELSIF (ready == VCC) THEN
 	ip.d[] = ip.q[];
 	gpr[].d[] = gpr[].q[];
+	zero_flag.d = zero_flag.q;
 
 	IF fsm == st_idle THEN
 		rdy.d = VCC;

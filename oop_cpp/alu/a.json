@@ -1,0 +1,7 @@
+{ "ALU": [ 
+ 
+    {"id" : "a0", "type": "in"}, 
+    {"id" : "a1", "type": "in"}, 
+    {"id" : "out", "type": "out", "inputs": ["xor0"]}, 
+    {"id" : "xor0", "type": "xor", "inputs": ["a0","a1"]}
+] }

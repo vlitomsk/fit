@@ -1,0 +1,19 @@
+{ "ALU": [ 
+ 
+    {"id" : "a0", "type": "in"}, 
+    {"id" : "a1", "type": "in"}, 
+    {"id" : "a2", "type": "in"}, 
+    {"id" : "a3", "type": "in"}, 
+    {"id" : "a4", "type": "in"}, 
+    {"id" : "a5", "type": "in"}, 
+    {"id" : "a6", "type": "in"}, 
+    {"id" : "a7", "type": "in"}, 
+
+    {"id" : "y0", "type": "in"}, 
+    {"id" : "y1", "type": "in"}, 
+    {"id" : "y2", "type": "in"}, 
+    {"id" : "out", "type": "out", "inputs": ["mux0"]}, 
+
+
+    {"id" : "mux0", "type": "multiplexer", "inputs": ["a0", "a1", "a2", "a3", "a4", "a5", "a6", "a7", "y0", "y1", "y2"]}
+] }

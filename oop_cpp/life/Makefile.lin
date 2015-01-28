@@ -1,0 +1,9 @@
+all:
+	g++ -fno-inline-functions -O0 -std=c++11 -c -g Bitmap.cpp
+	g++ -fno-inline-functions -O0 -std=c++11 -c -g Life.cpp
+	g++ -fno-inline-functions -O0 -std=c++11 -c -g main.cpp
+	g++ *.o -o gr
+
+clean:
+	rm -f *.o
+	rm -f gr

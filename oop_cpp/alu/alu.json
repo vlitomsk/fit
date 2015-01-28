@@ -1,0 +1,43 @@
+{ "ALU": [ 
+
+    {"id" : "A0", "type": "in"}, 
+    {"id" : "A1", "type": "in"}, 
+    {"id" : "B0", "type": "in"}, 
+    {"id" : "B1", "type": "in"}, 
+
+    {"id" : "Op0", "type": "in"}, 
+    {"id" : "Op1", "type": "in"}, 
+    {"id" : "Op2", "type": "in"}, 
+    {"id" : "CarryIn", "type": "in"}, 
+
+
+    {"id" : "CarryOut", "type": "out", "inputs": ["ab1_l3"]}, 
+    {"id" : "Out0", "type": "out", "inputs": ["m0"]}, 
+    {"id" : "Out1", "type": "out", "inputs": ["m1"]}, 
+
+
+    {"id" : "ab0_l1_0", "type": "xor", "inputs": ["A0","B0"]}, 
+    {"id" : "ab0_l1_1", "type": "and", "inputs": ["A0","B0"]}, 
+    {"id" : "ab0_l1_2", "type": "or", "inputs": ["A0","B0"]}, 
+    {"id" : "ab0_l1_3", "type": "xor", "inputs": ["A0","B0"]}, 
+
+    {"id" : "ab1_l1_0", "type": "xor", "inputs": ["A1","B1"]}, 
+    {"id" : "ab1_l1_1", "type": "and", "inputs": ["A1","B1"]}, 
+    {"id" : "ab1_l1_2", "type": "or", "inputs": ["A1","B1"]}, 
+    {"id" : "ab1_l1_3", "type": "xor", "inputs": ["A1","B1"]}, 
+
+    {"id" : "ab0_l2_0", "type": "xor", "inputs": ["CarryIn","ab0_l1_3"]}, 
+    {"id" : "ab0_l2_1", "type": "and", "inputs": ["CarryIn","ab0_l1_3"]}, 
+    {"id" : "ab0_l2_2", "type": "and", "inputs": ["A0","B0"]}, 
+
+    {"id" : "ab1_l2_0", "type": "xor", "inputs": ["ab0_l3","ab1_l1_3"]}, 
+    {"id" : "ab1_l2_1", "type": "and", "inputs": ["ab0_l3","ab1_l1_3"]}, 
+    {"id" : "ab1_l2_2", "type": "and", "inputs": ["A1","B1"]}, 
+
+    {"id" : "ab0_l3", "type": "or", "inputs": ["ab0_l2_1", "ab0_l2_2"]}, 
+    {"id" : "ab1_l3", "type": "or", "inputs": ["ab1_l2_1", "ab1_l2_2"]}, 
+
+
+    {"id" : "m0", "type": "multiplexer", "inputs": ["ab0_l1_0", "ab0_l1_1", "ab0_l1_2", "ab0_l2_0", "", "", "", "", "Op0","Op1", "Op2"]}, 
+    {"id" : "m1", "type": "multiplexer", "inputs": ["ab1_l1_0", "ab1_l1_1", "ab1_l1_2", "ab1_l2_0", "", "", "", "", "Op0","Op1", "Op2"]} 
+] }

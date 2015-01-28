@@ -1,0 +1,12 @@
+all:
+	wpp gr.cpp -xs
+	wpp window.cpp -xs
+	wpp bitmap.cpp -xs
+	wpp life.cpp -xs
+	wpp graphctl.cpp -xs
+	wpp maindos.cpp -xs
+	wlink name gr.exe file *.obj
+
+clean:
+	del *.obj
+	del *.err

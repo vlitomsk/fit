@@ -134,7 +134,11 @@ void play_token(const char *tok, int len, WaveFile *wav) {
 		--note;
 		octave = tok[2] - '0';
 		duration = (float)(tok[3] - '0');
-	} else
+	} else if (tok[1] == '#') {
+	  ++note;
+	  octave = tok[2] - '0';
+	  duration = (float)(tok[3] - '0');
+  } else
 		duration = (float)(tok[2] - '0');
 	duration = 1.0 / duration;
 

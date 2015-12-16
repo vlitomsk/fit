@@ -1,0 +1,3 @@
+#!/usr/bin/env bash
+rm -f main
+gcc -m32 -g main.c -o main -O1 -lm && sudo time nice -n -20 ./main output

@@ -1,0 +1,23 @@
+#!/bin/bash 
+
+rm -f O*.log
+rm -f monte
+
+if [ -n "$1" ]
+then
+	testNumber="$1"
+else
+	testNumber="270000000"
+	echo "Using default test number $testNumber"
+fi
+
+for opt in "O0" "O1" "O2" "O3" "Os" "Ofast"; do
+	gcc monte.c -o monte -lrt -$opt
+	echo "$opt compiled! Running..."
+	nice -n -20 ./monte $testNumber $opt.log
+	echo "$opt done!"
+	echo -n "Disk usage (bytes): " >> $opt.log
+	du -b monte >> $opt.log
+done
+
+#watch --interval 2 "cat time.log"

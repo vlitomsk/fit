@@ -1,0 +1,23 @@
+==> O0.log <==
+Min. time: 9.651593 s
+Disk usage (bytes): 9706	monte
+
+==> O1.log <==
+Min. time: 9.044691 s
+Disk usage (bytes): 9706	monte
+
+==> O2.log <==
+Min. time: 9.135485 s
+Disk usage (bytes): 9706	monte
+
+==> O3.log <==
+Min. time: 9.171926 s
+Disk usage (bytes): 9706	monte
+
+==> Ofast.log <==
+Min. time: 9.130773 s
+Disk usage (bytes): 11078	monte
+
+==> Os.log <==
+Min. time: 9.146798 s
+Disk usage (bytes): 8858	monte

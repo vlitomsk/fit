@@ -41,7 +41,7 @@ main() {
 
 	WaveFile wav = open_wave_file("./outp.wav");
 	set_tempo(100);
-	set_vibrato(false);
+	set_vibrato(true);
   play_sequence("F#32 G34 A32 H32 G32 E32 H32 A34 G34 F#32 G34 A32 H34 G32 E32 E32", &wav); // коробейники 1
   play_sequence("C32 A34 E32 D44 C44 H32 C34 H32 A34 G34 F#32 G34 A32 H32 G32 E32 E31", &wav); // коробейники 2
   close_wave_file(wav);

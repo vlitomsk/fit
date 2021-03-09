@@ -61,9 +61,9 @@ typedef struct {
 } BitmapImage;
 
 typedef struct {
-    byte width;
-    byte height;
-    BitmapImage bitmap;
+    byte width; // width of letter
+    byte height; // height of letter
+    BitmapImage bitmap; // bitmap of whole font. ( !"#$%&\'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\]^_`abcdefghijklmnopqrstuvwxyz{|}~)
 } Font; // it's just bitmap exploded into width*height pieces
 
 extern byte loadBMP(const char *path, BitmapImage *img);

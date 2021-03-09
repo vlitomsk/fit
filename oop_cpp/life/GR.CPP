@@ -70,8 +70,9 @@ byte loadBMP(const char *path, BitmapImage *img) {
     // parsing BITMAP INFO
     // only bitmapinfo v4 is supported
     if (statusOk) {
-        if (*(dword*)(buf + 0xe) != 0x6c) {
-            printf("Your BMP has version != v4\n");
+        dword structSize = *(dword*)(buf + 0xe);
+        if (structSize != 40 && structSize != 108 && structSize != 124) {
+            printf("Your BMP has version != v3 or v4 or v5\n");
             statusOk = 0;
         }
     }
@@ -230,11 +231,18 @@ void setTextBG(byte color) {
     g_textBG = color;
 }
 
+// text to put on bmp (without head&tail quotes):
+// " !"#$%&\'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\]^_`abcdefghijklmnopqrstuvwxyz{|}~"
+// font: terminus 12px (letter size 6x12 pxpx)
+// white background, black foreground
+// image size: 570x12
+// save as BMP v4, grayscale 8-bit pallette supported.
+// Then make .fnt file which (see typedef struct Font in GR.H)
 byte plotChar(const Font* fnt, char ch, int x, int y) {
     if (ch < ' ' || ch > '~')
         return 0;
     plotBMP(&(fnt->bitmap), x, y,
-            fnt->width * (ch - ' '), 0,
+            fnt->width * (ch + (ch == ' ' ? 0 : 1) - ' '), 0,
             fnt->width, fnt->height);
     return 1;
 }

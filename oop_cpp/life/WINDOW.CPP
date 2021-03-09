@@ -1,10 +1,10 @@
 #include "WINDOW.H"
 #include "GR.H"
 #include <conio.h>
-#include <cstring>
+#include <string.h>
 #include "COLORS.H"
 
-using namespace std;
+//using namespace std;
 
 word centerAlignedX(const char *s, word x) {
         return x - (strlen(s) >> 1) * globFontWidth();
